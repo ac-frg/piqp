@@ -13,9 +13,9 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
     cmake_policy(SET CMP0135 OLD)
 endif()
 
-# Find pybind11
-set(PYBIND11_FINDPYTHON ON)
-find_package(pybind11 CONFIG REQUIRED)
+# Find nanobind
+find_package(Python 3.8 COMPONENTS Interpreter Development.Module REQUIRED)
+find_package(nanobind CONFIG REQUIRED)
 
 # detect arm64 cross compilation on macOS
 if(DEFINED ENV{_PYTHON_HOST_PLATFORM})
@@ -25,7 +25,7 @@ if(DEFINED ENV{_PYTHON_HOST_PLATFORM})
 endif()
 
 # add instruction set detection on x86/amd64
-pybind11_add_module(instruction_set src/instruction_set.cpp)
+nanobind_add_module(instruction_set src/instruction_set.cpp)
 
 # only link cpu_features on x86/amd64
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
@@ -34,7 +34,7 @@ if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
 endif()
 
 function(CREATE_PIQP_PYTHON_TARGET target_name COMPILE_OPTIONS)
-    pybind11_add_module(${target_name} src/piqp_python.cpp)
+    nanobind_add_module(${target_name} src/piqp_python.cpp)
     target_compile_options(${target_name} PRIVATE ${COMPILE_OPTIONS})
     target_link_libraries(${target_name} PRIVATE piqp_header_only_no_blasfeo_linked)
     target_compile_definitions(${target_name} PRIVATE PYTHON_MODULE_NAME=${target_name})
@@ -107,3 +107,13 @@ if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
     install(TARGETS piqp_python_avx2 LIBRARY DESTINATION piqp)
     install(TARGETS piqp_python_avx512 LIBRARY DESTINATION piqp)
 endif()
+
+# Generate type stubs for piqp_python module at install time
+nanobind_add_stub(
+    piqp_python_stub
+    INSTALL_TIME
+    MODULE piqp_python
+    OUTPUT piqp/__init__.pyi
+    MARKER_FILE piqp/py.typed
+    COMPONENT python_stubs
+)

@@ -6,7 +6,7 @@
 // This source code is licensed under the BSD 2-Clause License found in the
 // LICENSE file in the root directory of this source tree.
 
-#include <pybind11/pybind11.h>
+#include <nanobind/nanobind.h>
 
 #if defined(CPU_FEATURES_AVAILABLE)
 #include "cpu_features_macros.h"
@@ -16,7 +16,7 @@
 #include "cpuinfo_x86.h"
 #endif
 
-namespace py = pybind11;
+namespace nb = nanobind;
 #if defined(CPU_FEATURES_AVAILABLE)
 using namespace cpu_features;
 #endif
@@ -25,7 +25,7 @@ using namespace cpu_features;
 const X86Info info = GetX86Info();
 #endif
 
-PYBIND11_MODULE(instruction_set, m) {
+NB_MODULE(instruction_set, m) {
 #if defined(CPU_FEATURES_ARCH_X86)
     m.attr("avx2") = (bool) info.features.avx2;
     m.attr("avx512f") = (bool) info.features.avx512f;
