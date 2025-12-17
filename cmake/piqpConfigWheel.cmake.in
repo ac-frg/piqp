@@ -1,0 +1,122 @@
+# This file is part of PIQP.
+#
+# Copyright (c) 2025 EPFL
+#
+# This source code is licensed under the BSD 2-Clause License found in the
+# LICENSE file in the root directory of this source tree.
+
+# Config file for piqp when installed via Python wheel
+# Allows using find_package(piqp) with the wheel-installed libraries
+
+@PACKAGE_INIT@
+
+set(PIQP_VERSION "@PROJECT_VERSION@")
+
+# Get the directory where this config file is located
+get_filename_component(piqp_PACKAGE_DIR "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+
+# Set paths for headers, libraries, and other components
+set(piqp_INCLUDE_DIR "${piqp_PACKAGE_DIR}/include")
+set(piqp_LIB_DIR "${piqp_PACKAGE_DIR}/lib")
+
+# Check if the header directory exists
+if(NOT EXISTS "${piqp_INCLUDE_DIR}/piqp")
+    message(FATAL_ERROR "piqp headers not found in ${piqp_INCLUDE_DIR}")
+endif()
+
+# Create imported targets for the shared libraries
+# Generic target
+if(NOT TARGET piqp::piqp_shared)
+    add_library(piqp::piqp_shared SHARED IMPORTED)
+    
+    # Detect shared library extension
+    if(WIN32)
+        set(piqp_LIB_NAMES piqp.dll)
+    elseif(APPLE)
+        set(piqp_LIB_NAMES libpiqp.dylib)
+    else()
+        set(piqp_LIB_NAMES libpiqp.so)
+    endif()
+    
+    # Find the library
+    find_library(piqp_SHARED_LIBRARY NAMES ${piqp_LIB_NAMES} PATHS "${piqp_LIB_DIR}" NO_DEFAULT_PATH)
+    
+    if(piqp_SHARED_LIBRARY)
+        set_target_properties(piqp::piqp_shared PROPERTIES
+            IMPORTED_LOCATION "${piqp_SHARED_LIBRARY}"
+            IMPORTED_NO_SONAME TRUE
+            INTERFACE_INCLUDE_DIRECTORIES "${piqp_INCLUDE_DIR}"
+        )
+        
+        # Find Eigen3
+        find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+        target_link_libraries(piqp::piqp_shared INTERFACE Eigen3::Eigen)
+    else()
+        message(FATAL_ERROR "Could not find piqp shared library in ${piqp_LIB_DIR}")
+    endif()
+endif()
+
+# AVX2 target (x86/amd64 only)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+    if(NOT TARGET piqp::piqp_shared_avx2)
+        add_library(piqp::piqp_shared_avx2 SHARED IMPORTED)
+        
+        if(WIN32)
+            set(piqp_AVX2_LIB_NAMES piqp_avx2.dll)
+        elseif(APPLE)
+            set(piqp_AVX2_LIB_NAMES libpiqp_avx2.dylib)
+        else()
+            set(piqp_AVX2_LIB_NAMES libpiqp_avx2.so)
+        endif()
+        
+        find_library(piqp_SHARED_AVX2_LIBRARY NAMES ${piqp_AVX2_LIB_NAMES} PATHS "${piqp_LIB_DIR}" NO_DEFAULT_PATH)
+        
+        if(piqp_SHARED_AVX2_LIBRARY)
+            set_target_properties(piqp::piqp_shared_avx2 PROPERTIES
+                IMPORTED_LOCATION "${piqp_SHARED_AVX2_LIBRARY}"
+                IMPORTED_NO_SONAME TRUE
+                INTERFACE_INCLUDE_DIRECTORIES "${piqp_INCLUDE_DIR}"
+            )
+            find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+            target_link_libraries(piqp::piqp_shared_avx2 INTERFACE Eigen3::Eigen)
+        endif()
+    endif()
+    
+    # AVX512 target
+    if(NOT TARGET piqp::piqp_shared_avx512)
+        add_library(piqp::piqp_shared_avx512 SHARED IMPORTED)
+        
+        if(WIN32)
+            set(piqp_AVX512_LIB_NAMES piqp_avx512.dll)
+        elseif(APPLE)
+            set(piqp_AVX512_LIB_NAMES libpiqp_avx512.dylib)
+        else()
+            set(piqp_AVX512_LIB_NAMES libpiqp_avx512.so)
+        endif()
+        
+        find_library(piqp_SHARED_AVX512_LIBRARY NAMES ${piqp_AVX512_LIB_NAMES} PATHS "${piqp_LIB_DIR}" NO_DEFAULT_PATH)
+        
+        if(piqp_SHARED_AVX512_LIBRARY)
+            set_target_properties(piqp::piqp_shared_avx512 PROPERTIES
+                IMPORTED_LOCATION "${piqp_SHARED_AVX512_LIBRARY}"
+                IMPORTED_NO_SONAME TRUE
+                INTERFACE_INCLUDE_DIRECTORIES "${piqp_INCLUDE_DIR}"
+            )
+            find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+            target_link_libraries(piqp::piqp_shared_avx512 INTERFACE Eigen3::Eigen)
+        endif()
+    endif()
+endif()
+
+# Create header-only target for backwards compatibility
+if(NOT TARGET piqp::piqp)
+    add_library(piqp::piqp INTERFACE IMPORTED)
+    set_target_properties(piqp::piqp PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${piqp_INCLUDE_DIR}"
+    )
+    find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+    target_link_libraries(piqp::piqp INTERFACE Eigen3::Eigen)
+endif()
+
+# Export the include dir and lib dir
+set(piqp_FOUND TRUE)

@@ -159,22 +159,77 @@ macro(create_piqp_library library_name)
     endif ()
 endmacro()
 
+macro(create_piqp_shared_library library_name)
+    set(options)
+    set(one_value_args COMPILE_OPTIONS)
+    cmake_parse_arguments(CREATE_PIQP_SHARED_LIBRARY "${options}" "${one_value_args}" "" ${ARGN})
+
+    add_library(${library_name} SHARED ${TEMPLATE_SOURCES})
+    target_include_directories(${library_name} PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
+        $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>
+    )
+    target_link_libraries(${library_name} PUBLIC Eigen3::Eigen)
+    target_compile_definitions(${library_name} PUBLIC PIQP_WITH_TEMPLATE_INSTANTIATION)
+    
+    if(CREATE_PIQP_SHARED_LIBRARY_COMPILE_OPTIONS)
+        target_compile_options(${library_name} PRIVATE ${CREATE_PIQP_SHARED_LIBRARY_COMPILE_OPTIONS})
+    endif()
+    
+    target_compile_options(${library_name} PRIVATE ${compiler_flags})
+    target_link_options(${library_name} PRIVATE ${compiler_flags})
+    
+    if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+        # Ensure ABI compatibility up to AVX512
+        if (BUILD_WITH_EIGEN_MAX_ALIGN_BYTES)
+            target_compile_definitions(${library_name} PUBLIC EIGEN_MAX_ALIGN_BYTES=64)
+        endif ()
+    endif ()
+endmacro()
+
 if (BUILD_WITH_TEMPLATE_INSTANTIATION)
     message(STATUS "Building with template instantiation")
 
     file(GLOB_RECURSE TEMPLATE_SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 
-    create_piqp_library(piqp)
-    set_target_properties(piqp PROPERTIES OUTPUT_NAME piqp)
-    target_compile_definitions(piqp PUBLIC PIQP_WITH_TEMPLATE_INSTANTIATION)
-    if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
-        # Ensure ABI compatibility up to AVX512
-        if (BUILD_WITH_EIGEN_MAX_ALIGN_BYTES)
-            target_compile_definitions(piqp PUBLIC EIGEN_MAX_ALIGN_BYTES=64)
+    # When building for Python, only create shared libraries, not the regular library
+    if (BUILD_PYTHON_INTERFACE)
+        # Generic shared library
+        create_piqp_shared_library(piqp_shared)
+        set_target_properties(piqp_shared PROPERTIES OUTPUT_NAME piqp)
+        
+        # Architecture-specific variants for x86/amd64
+        if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+            if(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
+                set(AVX2_COMPILE_OPTION "/arch:AVX2")
+                set(FMA_COMPILE_OPTION "/fp:fast")
+                set(AVX512_COMPILE_OPTION "/arch:AVX512")
+            else()
+                set(AVX2_COMPILE_OPTION "-mavx2")
+                set(FMA_COMPILE_OPTION "-mfma;-ffp-contract=on")
+                set(AVX512_COMPILE_OPTION "-mavx512f")
+            endif()
+            
+            create_piqp_shared_library(piqp_shared_avx2 COMPILE_OPTIONS "${AVX2_COMPILE_OPTION};${FMA_COMPILE_OPTION}")
+            set_target_properties(piqp_shared_avx2 PROPERTIES OUTPUT_NAME piqp_avx2)
+            
+            create_piqp_shared_library(piqp_shared_avx512 COMPILE_OPTIONS "${AVX512_COMPILE_OPTION};${FMA_COMPILE_OPTION}")
+            set_target_properties(piqp_shared_avx512 PROPERTIES OUTPUT_NAME piqp_avx512)
+        endif()
+    else()
+        # For non-Python builds, create the regular library
+        create_piqp_library(piqp)
+        set_target_properties(piqp PROPERTIES OUTPUT_NAME piqp)
+        target_compile_definitions(piqp PUBLIC PIQP_WITH_TEMPLATE_INSTANTIATION)
+        if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+            # Ensure ABI compatibility up to AVX512
+            if (BUILD_WITH_EIGEN_MAX_ALIGN_BYTES)
+                target_compile_definitions(piqp PUBLIC EIGEN_MAX_ALIGN_BYTES=64)
+            endif ()
         endif ()
-    endif ()
-    target_compile_options(piqp PRIVATE ${compiler_flags})
-    target_link_options(piqp PRIVATE ${compiler_flags})
+        target_compile_options(piqp PRIVATE ${compiler_flags})
+        target_link_options(piqp PRIVATE ${compiler_flags})
+    endif()
 
     create_piqp_library(piqp_header_only_no_blasfeo_linked INTERFACE)
     create_piqp_library(piqp_header_only INTERFACE)
@@ -231,6 +286,55 @@ if (BUILD_WITH_BLASFEO)
     if (BUILD_WITH_TEMPLATE_INSTANTIATION)
         target_compile_definitions(piqp PUBLIC PIQP_HAS_BLASFEO)
         target_link_libraries(piqp PUBLIC blasfeo)
+        
+        # Link shared libraries to appropriate BLASFEO variants
+        if (BUILD_PYTHON_INTERFACE)
+            target_compile_definitions(piqp_shared PUBLIC PIQP_HAS_BLASFEO)
+            # if x86/amd64
+            if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+                # if 64bit
+                if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86_64)|(X86_64)|(amd64)|(AMD64)")
+                    if (TARGET blasfeo_x64)
+                        target_link_libraries(piqp_shared PUBLIC blasfeo_x64)
+                    else ()
+                        target_link_libraries(piqp_shared PUBLIC blasfeo)
+                    endif ()
+                    if (TARGET blasfeo_x64_avx2)
+                        target_compile_definitions(piqp_shared_avx2 PUBLIC PIQP_HAS_BLASFEO)
+                        target_link_libraries(piqp_shared_avx2 PUBLIC blasfeo_x64_avx2)
+                    else ()
+                        target_compile_definitions(piqp_shared_avx2 PUBLIC PIQP_HAS_BLASFEO)
+                        target_link_libraries(piqp_shared_avx2 PUBLIC blasfeo)
+                    endif ()
+                    if (TARGET blasfeo_x64_avx512)
+                        target_compile_definitions(piqp_shared_avx512 PUBLIC PIQP_HAS_BLASFEO)
+                        target_link_libraries(piqp_shared_avx512 PUBLIC blasfeo_x64_avx512)
+                    else ()
+                        target_compile_definitions(piqp_shared_avx512 PUBLIC PIQP_HAS_BLASFEO)
+                        target_link_libraries(piqp_shared_avx512 PUBLIC blasfeo)
+                    endif ()
+                else ()
+                    target_link_libraries(piqp_shared PUBLIC blasfeo)
+                    if (DEFINED piqp_shared_avx2)
+                        target_compile_definitions(piqp_shared_avx2 PUBLIC PIQP_HAS_BLASFEO)
+                        target_link_libraries(piqp_shared_avx2 PUBLIC blasfeo)
+                    endif ()
+                    if (DEFINED piqp_shared_avx512)
+                        target_compile_definitions(piqp_shared_avx512 PUBLIC PIQP_HAS_BLASFEO)
+                        target_link_libraries(piqp_shared_avx512 PUBLIC blasfeo)
+                    endif ()
+                endif ()
+            # if arm64
+            elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "(ARM64)|(arm64)|(aarch64)")
+                if (TARGET blasfeo_arm64)
+                    target_link_libraries(piqp_shared PUBLIC blasfeo_arm64)
+                else ()
+                    target_link_libraries(piqp_shared PUBLIC blasfeo)
+                endif ()
+            else ()
+                target_link_libraries(piqp_shared PUBLIC blasfeo)
+            endif()
+        endif()
     else ()
         target_compile_definitions(piqp INTERFACE PIQP_HAS_BLASFEO)
         target_link_libraries(piqp INTERFACE blasfeo)
@@ -303,28 +407,40 @@ if (BUILD_WITH_TRACY)
 endif ()
 
 if (BUILD_WITH_STD_OPTIONAL)
-    if (BUILD_WITH_TEMPLATE_INSTANTIATION)
+    if (BUILD_WITH_TEMPLATE_INSTANTIATION AND NOT BUILD_PYTHON_INTERFACE)
         target_compile_definitions(piqp PUBLIC PIQP_STD_OPTIONAL)
+    elseif (BUILD_WITH_TEMPLATE_INSTANTIATION AND BUILD_PYTHON_INTERFACE)
+        target_compile_definitions(piqp_shared PUBLIC PIQP_STD_OPTIONAL)
     else ()
         target_compile_definitions(piqp INTERFACE PIQP_STD_OPTIONAL)
     endif ()
     target_compile_definitions(piqp_header_only_no_blasfeo_linked INTERFACE PIQP_STD_OPTIONAL)
 endif ()
 if (BUILD_WITH_STD_FILESYSTEM)
-    target_compile_definitions(piqp INTERFACE PIQP_STD_FILESYSTEM)
+    if (BUILD_WITH_TEMPLATE_INSTANTIATION AND NOT BUILD_PYTHON_INTERFACE)
+        target_compile_definitions(piqp INTERFACE PIQP_STD_FILESYSTEM)
+    elseif (BUILD_WITH_TEMPLATE_INSTANTIATION AND BUILD_PYTHON_INTERFACE)
+        target_compile_definitions(piqp_shared INTERFACE PIQP_STD_FILESYSTEM)
+    else ()
+        target_compile_definitions(piqp INTERFACE PIQP_STD_FILESYSTEM)
+    endif ()
     target_compile_definitions(piqp_header_only_no_blasfeo_linked INTERFACE PIQP_STD_FILESYSTEM)
 endif ()
 
 if (DEBUG_PRINTS)
-    if (BUILD_WITH_TEMPLATE_INSTANTIATION)
+    if (BUILD_WITH_TEMPLATE_INSTANTIATION AND NOT BUILD_PYTHON_INTERFACE)
         target_compile_definitions(piqp PUBLIC PIQP_DEBUG_PRINT)
+    elseif (BUILD_WITH_TEMPLATE_INSTANTIATION AND BUILD_PYTHON_INTERFACE)
+        target_compile_definitions(piqp_shared PUBLIC PIQP_DEBUG_PRINT)
     else ()
         target_compile_definitions(piqp INTERFACE PIQP_DEBUG_PRINT)
     endif ()
     target_compile_definitions(piqp_header_only_no_blasfeo_linked INTERFACE PIQP_DEBUG_PRINT)
 endif ()
 
-add_library(piqp::piqp ALIAS piqp)
+if (NOT BUILD_PYTHON_INTERFACE OR NOT BUILD_WITH_TEMPLATE_INSTANTIATION)
+    add_library(piqp::piqp ALIAS piqp)
+endif()
 add_library(piqp::piqp_header_only ALIAS piqp_header_only)
 
 macro(fix_test_dll target)
@@ -371,11 +487,20 @@ if (ENABLE_INSTALL)
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 
+    # Determine list of targets to install
+    set(INSTALL_TARGETS piqp_header_only_no_blasfeo_linked piqp_header_only)
+    
+    # Only install piqp if not building for Python, otherwise the shared libraries are installed by Python interface
+    if (NOT BUILD_PYTHON_INTERFACE AND BUILD_WITH_TEMPLATE_INSTANTIATION)
+        list(INSERT INSTALL_TARGETS 0 piqp)
+    endif()
+
     install(
-        TARGETS piqp piqp_header_only_no_blasfeo_linked piqp_header_only
+        TARGETS ${INSTALL_TARGETS}
         EXPORT piqpTargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
 
     # https://cmake.org/cmake/help/latest/guide/importing-exporting/index.html

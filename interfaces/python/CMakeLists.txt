@@ -33,15 +33,27 @@ if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
     target_link_libraries(instruction_set PRIVATE cpu_features)
 endif()
 
-function(CREATE_PIQP_PYTHON_TARGET target_name COMPILE_OPTIONS)
+function(CREATE_PIQP_PYTHON_TARGET target_name library_target COMPILE_OPTIONS)
     nanobind_add_module(${target_name} src/piqp_python.cpp)
     target_compile_options(${target_name} PRIVATE ${COMPILE_OPTIONS})
-    target_link_libraries(${target_name} PRIVATE piqp_header_only_no_blasfeo_linked)
+    # Link against the shared library instead of header-only
+    target_link_libraries(${target_name} PRIVATE ${library_target})
     target_compile_definitions(${target_name} PRIVATE PYTHON_MODULE_NAME=${target_name})
     # SKBUILD_PROJECT_VERSION_FULL is defined by scikit-build-core and passed into the C++ code as a define (VERSION_INFO) here.
     target_compile_definitions(${target_name} PRIVATE VERSION_INFO=${SKBUILD_PROJECT_VERSION_FULL})
     if(UNIX AND NOT APPLE)
         target_link_options(${target_name} PRIVATE "-Wl,-z,noexecstack")
+    endif()
+    
+    # Set RPATH to find the shared library at runtime
+    if(APPLE)
+        set_target_properties(${target_name} PROPERTIES
+            INSTALL_RPATH "@loader_path/lib"
+        )
+    elseif(UNIX)
+        set_target_properties(${target_name} PROPERTIES
+            INSTALL_RPATH "$ORIGIN/lib"
+        )
     endif()
 endfunction()
 
@@ -57,49 +69,14 @@ else()
     set(AVX512_COMPILE_OPTION "-mavx512f")
 endif()
 
-create_piqp_python_target(piqp_python "")
+create_piqp_python_target(piqp_python piqp_shared "")
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
-    create_piqp_python_target(piqp_python_avx2 "${AVX2_COMPILE_OPTION};${FMA_COMPILE_OPTION}")
-    create_piqp_python_target(piqp_python_avx512 "${AVX512_COMPILE_OPTION};${FMA_COMPILE_OPTION}")
+    create_piqp_python_target(piqp_python_avx2 piqp_shared_avx2 "${AVX2_COMPILE_OPTION};${FMA_COMPILE_OPTION}")
+    create_piqp_python_target(piqp_python_avx512 piqp_shared_avx512 "${AVX512_COMPILE_OPTION};${FMA_COMPILE_OPTION}")
 endif()
 
-if (BUILD_WITH_BLASFEO)
-    # if x86/amd64
-    if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
-        # if 64bit
-        if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86_64)|(X86_64)|(amd64)|(AMD64)")
-            if (TARGET blasfeo_x64)
-                target_link_libraries(piqp_python PRIVATE blasfeo_x64)
-            else ()
-                target_link_libraries(piqp_python PRIVATE blasfeo)
-            endif ()
-            if (TARGET blasfeo_x64_avx2)
-                target_link_libraries(piqp_python_avx2 PRIVATE blasfeo_x64_avx2)
-            else ()
-                target_link_libraries(piqp_python_avx2 PRIVATE blasfeo)
-            endif ()
-            if (TARGET blasfeo_x64_avx512)
-                target_link_libraries(piqp_python_avx512 PRIVATE blasfeo_x64_avx512)
-            else ()
-                target_link_libraries(piqp_python_avx512 PRIVATE blasfeo)
-            endif ()
-        else ()
-            target_link_libraries(piqp_python PRIVATE blasfeo)
-            target_link_libraries(piqp_python_avx2 PRIVATE blasfeo)
-            target_link_libraries(piqp_python_avx512 PRIVATE blasfeo)
-        endif ()
-
-    # if arm64
-    elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "(ARM64)|(arm64)|(aarch64)")
-        if (TARGET blasfeo_arm64)
-            target_link_libraries(piqp_python PRIVATE blasfeo_arm64)
-        else ()
-            target_link_libraries(piqp_python PRIVATE blasfeo)
-        endif ()
-    else ()
-        target_link_libraries(piqp_python PRIVATE blasfeo)
-    endif()
-endif ()
+# BLASFEO linking is now handled by the shared library targets (piqp_shared, piqp_shared_avx2, piqp_shared_avx512)
+# which are linked by CREATE_PIQP_PYTHON_TARGET
 
 install(TARGETS instruction_set LIBRARY DESTINATION piqp)
 install(TARGETS piqp_python LIBRARY DESTINATION piqp)
@@ -107,6 +84,33 @@ if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
     install(TARGETS piqp_python_avx2 LIBRARY DESTINATION piqp)
     install(TARGETS piqp_python_avx512 LIBRARY DESTINATION piqp)
 endif()
+
+# Install shared libraries
+install(TARGETS piqp_shared LIBRARY DESTINATION piqp/lib)
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+    install(TARGETS piqp_shared_avx2 LIBRARY DESTINATION piqp/lib)
+    install(TARGETS piqp_shared_avx512 LIBRARY DESTINATION piqp/lib)
+endif()
+
+# Install headers
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/piqp DESTINATION piqp/include FILES_MATCHING PATTERN "*.hpp" PATTERN "*.tpp")
+
+# Install CMake config files
+configure_file(
+    "${PROJECT_SOURCE_DIR}/cmake/piqpConfigWheel.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/piqpConfig.cmake"
+    @ONLY
+)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/piqpConfig.cmake" DESTINATION piqp/cmake)
+
+# Also install the version file for compatibility
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/piqpConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY ExactVersion
+)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/piqpConfigVersion.cmake" DESTINATION piqp/cmake)
 
 # Generate type stubs for piqp_python module at install time
 nanobind_add_stub(

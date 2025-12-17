@@ -33,9 +33,10 @@ build-backend = "scikit_build_core.build"
 minimum-version = "build-system.requires"
 build-dir = "build/{wheel_tag}"
 wheel.packages = ["interfaces/python/piqp"]
+cmake.build-type = "Release"
 
 [tool.scikit-build.cmake.define]
-BUILD_WITH_TEMPLATE_INSTANTIATION = "OFF"
+BUILD_WITH_TEMPLATE_INSTANTIATION = "ON"
 BUILD_PYTHON_INTERFACE = "ON"
 BUILD_C_INTERFACE = "OFF"
 BUILD_TESTS = "OFF"
