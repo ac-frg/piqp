@@ -116,7 +116,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/piqpConfigVersion.cmake" DESTINATION 
 nanobind_add_stub(
     piqp_python_stub
     INSTALL_TIME
-    MODULE piqp_python
+    MODULE piqp.piqp_python
     OUTPUT piqp/__init__.pyi
     MARKER_FILE piqp/py.typed
     COMPONENT python_stubs
