@@ -6,6 +6,7 @@
 // LICENSE file in the root directory of this source tree.
 
 #include "piqp/dense/kkt.hpp"
+#include "piqp/dense/kkt.tpp"
 
 namespace piqp
 {

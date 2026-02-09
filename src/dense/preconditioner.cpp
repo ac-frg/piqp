@@ -6,6 +6,7 @@
 // LICENSE file in the root directory of this source tree.
 
 #include "piqp/dense/preconditioner.hpp"
+#include "piqp/dense/preconditioner.tpp"
 
 namespace piqp
 {

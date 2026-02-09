@@ -495,8 +495,4 @@ MatrixType LDLTNoPivot<MatrixType,UpLo_>::reconstructedMatrix() const
 
 } // namespace piqp
 
-#ifdef PIQP_WITH_TEMPLATE_INSTANTIATION
-#include "piqp/dense/ldlt_no_pivot.tpp"
-#endif
-
 #endif //PIQP_LDLT_NO_PIVOT_HPP

@@ -8,6 +8,7 @@
 #ifdef PIQP_HAS_BLASFEO
 
 #include "piqp/sparse/multistage_kkt.hpp"
+#include "piqp/sparse/multistage_kkt.tpp"
 
 namespace piqp
 {

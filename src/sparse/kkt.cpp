@@ -6,6 +6,7 @@
 // LICENSE file in the root directory of this source tree.
 
 #include "piqp/sparse/kkt.hpp"
+#include "piqp/sparse/kkt.tpp"
 
 namespace piqp
 {
