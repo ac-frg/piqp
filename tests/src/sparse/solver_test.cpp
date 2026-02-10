@@ -18,7 +18,19 @@ using namespace piqp;
 using T = double;
 using I = int;
 
-class SparseSolverTest : public testing::TestWithParam<KKTSolver> {};
+class SparseSolverTest : public testing::TestWithParam<KKTSolver>
+{
+protected:
+    void SetUp() override
+    {
+#ifndef PIQP_HAS_BLASFEO
+        if (GetParam() == KKTSolver::sparse_multistage)
+        {
+            GTEST_SKIP() << "BLASFEO not available";
+        }
+#endif
+    }
+};
 
 /*
  * first QP:

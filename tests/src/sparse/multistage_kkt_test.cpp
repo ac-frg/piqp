@@ -99,6 +99,9 @@ void test_solve_multiply(Data<T, I>& data, Settings<T> settings1, Settings<T> se
 
 TEST(BlocksparseStageKKTTest, UpdateData)
 {
+#ifndef PIQP_HAS_BLASFEO
+    GTEST_SKIP() << "BLASFEO not available";
+#endif
     isize dim = 10;
     isize n_eq = 8;
     isize n_ineq = 9;
@@ -171,6 +174,9 @@ TEST(BlocksparseStageKKTTest, UpdateData)
 
 TEST_P(BlocksparseStageKKTTest, FactorizeSolveSQP)
 {
+#ifndef PIQP_HAS_BLASFEO
+    GTEST_SKIP() << "BLASFEO not available";
+#endif
     std::string path = "data/" + GetParam() + ".mat";
     Model<T, I> model = load_sparse_model<T, I>(path);
     Data<T, I> data(model);
