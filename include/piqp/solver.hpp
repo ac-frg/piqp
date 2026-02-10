@@ -29,9 +29,24 @@
 namespace piqp
 {
 
+namespace detail
+{
+
+template<typename T, typename I, typename Preconditioner, int MatrixType>
+struct is_solver_instantiated : std::false_type {};
+
+} // namespace detail
+
 template<typename T, typename I, typename Preconditioner, int MatrixType>
 class SolverBase
 {
+#ifdef PIQP_WITH_TEMPLATE_INSTANTIATION
+    static_assert(detail::is_solver_instantiated<T, I, Preconditioner, MatrixType>::value,
+                  "This type combination has no pre-compiled template instantiation. "
+                  "Use the default types (double, int), link against piqp::piqp_header_only, "
+                  "or build with BUILD_WITH_TEMPLATE_INSTANTIATION=OFF.");
+#endif
+
 protected:
     using DataType = std::conditional_t<MatrixType == PIQP_DENSE, dense::Data<T>, sparse::Data<T, I>>;
     using CMatRefType = std::conditional_t<MatrixType == PIQP_DENSE, CMatRef<T>, CSparseMatRef<T, I>>;
@@ -145,6 +160,7 @@ template<typename T, typename I = int, typename Preconditioner = sparse::RuizEqu
 class SparseSolver : public SolverBase<T, I, Preconditioner, PIQP_SPARSE>
 {
 public:
+
     void setup(const CSparseMatRef<T, I>& P,
                const CVecRef<T>& c,
                const optional<CSparseMatRef<T, I>>& A = nullopt,
@@ -173,6 +189,20 @@ public:
 
 namespace piqp
 {
+
+namespace detail
+{
+
+template<>
+struct is_solver_instantiated<common::Scalar, common::StorageIndex, common::dense::Preconditioner, PIQP_DENSE> : std::true_type {};
+template<>
+struct is_solver_instantiated<common::Scalar, common::StorageIndex, common::sparse::Preconditioner, PIQP_SPARSE> : std::true_type {};
+template<>
+struct is_solver_instantiated<common::Scalar, common::StorageIndex, dense::IdentityPreconditioner<common::Scalar>, PIQP_DENSE> : std::true_type {};
+template<>
+struct is_solver_instantiated<common::Scalar, common::StorageIndex, sparse::IdentityPreconditioner<common::Scalar, common::StorageIndex>, PIQP_SPARSE> : std::true_type {};
+
+} // namespace detail
 
 extern template class SolverBase<common::Scalar, common::StorageIndex, common::dense::Preconditioner, PIQP_DENSE>;
 extern template class SolverBase<common::Scalar, common::StorageIndex, common::sparse::Preconditioner, PIQP_SPARSE>;
