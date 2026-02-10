@@ -9,6 +9,11 @@
 #define PIQP_KKT_SYSTEM_TPP
 
 #include "piqp/kkt_system.hpp"
+#include "piqp/dense/kkt.hpp"
+#include "piqp/sparse/kkt.hpp"
+#ifdef PIQP_HAS_BLASFEO
+#include "piqp/sparse/multistage_kkt.hpp"
+#endif
 #include "piqp/utils/tracy.hpp"
 
 namespace piqp

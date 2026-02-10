@@ -8,16 +8,12 @@
 #ifndef PIQP_KKT_SYSTEM_HPP
 #define PIQP_KKT_SYSTEM_HPP
 
+#include "piqp/kkt_fwd.hpp"
 #include "piqp/kkt_solver_base.hpp"
 #include "piqp/settings.hpp"
 #include "piqp/variables.hpp"
 #include "piqp/dense/data.hpp"
-#include "piqp/dense/kkt.hpp"
 #include "piqp/sparse/data.hpp"
-#include "piqp/sparse/kkt.hpp"
-#ifdef PIQP_HAS_BLASFEO
-#include "piqp/sparse/multistage_kkt.hpp"
-#endif
 
 namespace piqp
 {

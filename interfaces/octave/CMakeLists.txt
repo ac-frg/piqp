@@ -17,4 +17,5 @@ set_target_properties(piqp_oct PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 target_compile_options(piqp_oct PRIVATE ${compiler_flags})
+target_link_options(piqp_oct PRIVATE ${compiler_flags})
 target_compile_definitions(piqp_oct PRIVATE PIQP_VERSION=${CMAKE_PROJECT_VERSION})

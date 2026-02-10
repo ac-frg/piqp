@@ -17,7 +17,7 @@ endif()
 include(FetchContent)
 FetchContent_Declare(
         googletest
-        URL https://github.com/google/googletest/archive/86add13493e5c881d7e4ba77fb91c1f57752b3a4.zip
+        URL https://github.com/google/googletest/archive/refs/tags/v1.16.0.zip
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -36,7 +36,7 @@ add_library(piqp-test INTERFACE)
 target_include_directories(piqp-test INTERFACE include)
 target_compile_options(piqp-test INTERFACE ${compiler_flags})
 if(${CMAKE_CXX_COMPILER_ID} IN_LIST gcc_like_cxx)
-    target_compile_options(piqp-test INTERFACE -Wno-gnu-zero-variadic-macro-arguments)
+    target_compile_options(piqp-test INTERFACE -Wno-gnu-zero-variadic-macro-arguments -Wno-c++17-attribute-extensions)
 endif()
 target_link_options(piqp-test INTERFACE ${compiler_flags})
 target_link_libraries(piqp-test INTERFACE piqp gtest_main gtest)

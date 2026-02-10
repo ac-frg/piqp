@@ -10,6 +10,19 @@
 #ifndef PIQP_SPARSE_MULTISTAGE_KKT_TPP
 #define PIQP_SPARSE_MULTISTAGE_KKT_TPP
 
+#include <cassert>
+#include "blasfeo.h"
+
+#ifdef PIQP_HAS_OPENMP
+#include "omp.h"
+#endif
+
+#include "piqp/fwd.hpp"
+#include "piqp/kkt_fwd.hpp"
+#include "piqp/settings.hpp"
+#include "piqp/utils/blasfeo_mat.hpp"
+#include "piqp/utils/blasfeo_vec.hpp"
+#include "piqp/utils/blasfeo_wrapper.hpp"
 #include "piqp/sparse/multistage_kkt.hpp"
 #include "piqp/utils/tracy.hpp"
 

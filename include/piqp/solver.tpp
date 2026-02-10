@@ -9,7 +9,15 @@
 #ifndef PIQP_SOLVER_TPP
 #define PIQP_SOLVER_TPP
 
+#include <cstdio>
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
+
+#include "piqp/fwd.hpp"
+#include "piqp/kkt_fwd.hpp"
+#include "piqp/timer.hpp"
 #include "piqp/solver.hpp"
+#include "piqp/sparse/utils.hpp"
 #include "piqp/utils/tracy.hpp"
 
 namespace piqp

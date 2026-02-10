@@ -15,7 +15,6 @@
 #include "piqp/fwd.hpp"
 #include "piqp/typedefs.hpp"
 #include "piqp/sparse/data.hpp"
-#include "piqp/sparse/utils.hpp"
 
 namespace piqp
 {

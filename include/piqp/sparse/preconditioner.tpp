@@ -10,6 +10,7 @@
 #define PIQP_SPARSE_PRECONDITIONER_TPP
 
 #include "piqp/sparse/preconditioner.hpp"
+#include "piqp/sparse/utils.hpp"
 #include "piqp/utils/tracy.hpp"
 
 namespace piqp

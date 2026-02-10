@@ -10,7 +10,6 @@
 
 #include <memory>
 
-#include "piqp/fwd.hpp"
 #include "piqp/typedefs.hpp"
 #include "piqp/utils/blasfeo_mat.hpp"
 

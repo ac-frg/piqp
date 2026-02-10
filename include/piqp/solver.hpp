@@ -9,13 +9,8 @@
 #ifndef PIQP_SOLVER_HPP
 #define PIQP_SOLVER_HPP
 
-#include <cstdio>
 #include <memory>
-#include <Eigen/Dense>
-#include <Eigen/Sparse>
 
-#include "piqp/fwd.hpp"
-#include "piqp/timer.hpp"
 #include "piqp/results.hpp"
 #include "piqp/settings.hpp"
 #include "piqp/variables.hpp"

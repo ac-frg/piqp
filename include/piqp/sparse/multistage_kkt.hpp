@@ -8,23 +8,11 @@
 #ifndef PIQP_SPARSE_MULTISTAGE_KKT_HPP
 #define PIQP_SPARSE_MULTISTAGE_KKT_HPP
 
-#include <cassert>
 #include <memory>
-#include "blasfeo.h"
 
-#ifdef PIQP_HAS_OPENMP
-#include "omp.h"
-#endif
-
-#include "piqp/fwd.hpp"
 #include "piqp/typedefs.hpp"
 #include "piqp/kkt_solver_base.hpp"
-#include "piqp/kkt_fwd.hpp"
-#include "piqp/settings.hpp"
 #include "piqp/sparse/data.hpp"
-#include "piqp/utils/blasfeo_mat.hpp"
-#include "piqp/utils/blasfeo_vec.hpp"
-#include "piqp/utils/blasfeo_wrapper.hpp"
 #include "piqp/sparse/blocksparse/block_info.hpp"
 #include "piqp/sparse/blocksparse/block_kkt.hpp"
 #include "piqp/sparse/blocksparse/block_mat.hpp"
