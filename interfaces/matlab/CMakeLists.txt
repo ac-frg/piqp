@@ -25,6 +25,7 @@ set_target_properties(piqp_instruction_set_mex PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 target_compile_options(piqp_instruction_set_mex PRIVATE ${compiler_flags})
+target_link_options(piqp_instruction_set_mex PRIVATE ${compiler_flags})
 
 function(CREATE_PIQP_MATLAB_TARGET target_name COMPILE_OPTIONS libs)
     matlab_add_mex(NAME ${target_name} SRC piqp_mex.cpp LINK_TO ${libs})
@@ -38,6 +39,7 @@ function(CREATE_PIQP_MATLAB_TARGET target_name COMPILE_OPTIONS libs)
     )
     target_compile_options(${target_name} PRIVATE ${COMPILE_OPTIONS})
     target_compile_options(${target_name} PRIVATE ${compiler_flags})
+    target_link_options(${target_name} PRIVATE ${compiler_flags})
     target_compile_definitions(${target_name} PRIVATE PIQP_VERSION=${CMAKE_PROJECT_VERSION})
     if(UNIX AND NOT APPLE)
         target_link_options(${target_name} PRIVATE "-Wl,-z,noexecstack")

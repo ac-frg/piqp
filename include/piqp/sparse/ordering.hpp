@@ -128,8 +128,4 @@ public:
 
 } // namespace piqp
 
-#ifdef PIQP_WITH_TEMPLATE_INSTANTIATION
-#include "piqp/sparse/ordering.tpp"
-#endif
-
 #endif //PIQP_SPARSE_ORDERING_HPP

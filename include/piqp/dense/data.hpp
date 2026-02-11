@@ -52,168 +52,21 @@ struct Data
 
     Data() = default;
 
-    explicit Data(Model<T> model)
-    : n(model.P.rows()), p(model.A.rows()), m(model.G.rows()),
-      P_utri(model.P.template triangularView<Eigen::Upper>()),
-      AT(model.A.transpose()), GT(model.G.transpose()),
-      c(model.c), b(model.b),
-      h_l(model.G.rows()), h_u(model.G.rows()),
-      x_l(model.P.rows()), x_u(model.P.rows()),
-      n_h_l(0), n_h_u(0), n_x_l(0), n_x_u(0),
-      h_l_idx(model.G.rows()), h_u_idx(model.G.rows()),
-      x_l_idx(model.P.rows()), x_u_idx(model.P.rows()),
-      x_b_scaling(Vec<T>::Constant(model.P.rows(), T(1)))
-    {
-        set_h_l(model.h_l);
-        set_h_u(model.h_u);
-        disable_inf_constraints();
-        set_x_l(model.x_l);
-        set_x_u(model.x_u);
-    }
+    explicit Data(Model<T> model);
 
-    void resize(isize n, isize p, isize m)
-    {
-        this->n = n;
-        this->p = p;
-        this->m = m;
+    void resize(isize n, isize p, isize m);
 
-        P_utri.resize(n, n);
-        AT.resize(n, p);
-        GT.resize(n, m);
+    void set_h_l(const optional<CVecRef<T>>& h_l);
+    void set_h_u(const optional<CVecRef<T>>& h_u);
+    void disable_inf_constraints();
+    void set_x_l(const optional<CVecRef<T>>& x_l);
+    void set_x_u(const optional<CVecRef<T>>& x_u);
 
-        c.resize(n);
-        b.resize(p);
-        h_l.resize(m);
-        h_u.resize(m);
-        x_l.resize(n);
-        x_u.resize(n);
+    void set_G_row_zero(Eigen::Index row);
 
-        h_l_idx.resize(m);
-        h_u_idx.resize(m);
-        x_l_idx.resize(n);
-        x_u_idx.resize(n);
-
-        x_b_scaling.resize(n);
-        x_b_scaling.setConstant(T(1));
-    }
-
-    void set_h_l(const optional<CVecRef<T>>& h_l)
-    {
-        n_h_l = 0;
-        if (h_l.has_value())
-        {
-            isize i_l = 0;
-            for (isize i = 0; i < m; i++)
-            {
-                if ((*h_l)(i) > -PIQP_INF)
-                {
-                    n_h_l += 1;
-                    this->h_l(i) = (*h_l)(i);
-                    h_l_idx(i_l++) = i;
-                } else {
-                    this->h_l(i) = -PIQP_INF;
-                }
-            }
-        } else {
-            this->h_l.setConstant(-PIQP_INF);
-        }
-    }
-
-    void set_h_u(const optional<CVecRef<T>>& h_u)
-    {
-        n_h_u = 0;
-        if (h_u.has_value())
-        {
-            isize i_u = 0;
-            for (isize i = 0; i < m; i++)
-            {
-                if ((*h_u)(i) < PIQP_INF)
-                {
-                    n_h_u += 1;
-                    this->h_u(i) = (*h_u)(i);
-                    h_u_idx(i_u++) = i;
-                } else {
-                    this->h_u(i) = PIQP_INF;
-                }
-            }
-        } else {
-            this->h_u.setConstant(PIQP_INF);
-        }
-    }
-
-    void disable_inf_constraints()
-    {
-        bool msg_printed = false;
-        for (isize i = 0; i < m; i++)
-        {
-            if (h_l(i) <= -PIQP_INF && h_u(i) >= PIQP_INF)
-            {
-                set_G_row_zero(i);
-                h_l(i) = T(-1);
-                h_u(i) = T(1);
-
-                if (!msg_printed)
-                {
-                    piqp_eprint("h_l[i] and h_u[i] are both close to -/+ infinity for i = %zd (and potentially other indices).\n", i);
-                    piqp_eprint("PIQP is setting the corresponding rows in G to zero (sparsity structure preserving).\n");
-                    piqp_eprint("Consider removing the corresponding constraints for faster solves.\n");
-                    msg_printed = true;
-                }
-            }
-        }
-        if (msg_printed) {
-            // recalculate idx
-            set_h_l(h_l);
-            set_h_u(h_u);
-        }
-    }
-
-    void set_x_l(const optional<CVecRef<T>>& x_l)
-    {
-        n_x_l = 0;
-        if (x_l.has_value())
-        {
-            isize i_l = 0;
-            for (isize i = 0; i < n; i++)
-            {
-                if ((*x_l)(i) > -PIQP_INF)
-                {
-                    n_x_l += 1;
-                    this->x_l(i_l) = (*x_l)(i);
-                    x_l_idx(i_l) = i;
-                    i_l++;
-                }
-            }
-        }
-    }
-
-    void set_x_u(const optional<CVecRef<T>>& x_u)
-    {
-        n_x_u = 0;
-        if (x_u.has_value())
-        {
-            isize i_u = 0;
-            for (isize i = 0; i < n; i++)
-            {
-                if ((*x_u)(i) < PIQP_INF)
-                {
-                    n_x_u += 1;
-                    this->x_u(i_u) = (*x_u)(i);
-                    x_u_idx(i_u) = i;
-                    i_u++;
-                }
-            }
-        }
-    }
-
-    void set_G_row_zero(Eigen::Index row)
-    {
-        GT.col(row).setZero();
-    }
-
-    Eigen::Index non_zeros_P_utri() { return P_utri.rows() * (P_utri.rows() + 1) / 2; }
-    Eigen::Index non_zeros_A() { return AT.rows() * AT.cols(); }
-    Eigen::Index non_zeros_G() { return GT.rows() * GT.cols(); }
+    Eigen::Index non_zeros_P_utri();
+    Eigen::Index non_zeros_A();
+    Eigen::Index non_zeros_G();
 };
 
 } // namespace dense
@@ -221,6 +74,21 @@ struct Data
 } // namespace piqp
 
 #ifdef PIQP_WITH_TEMPLATE_INSTANTIATION
+#include "piqp/common.hpp"
+
+namespace piqp
+{
+
+namespace dense
+{
+
+extern template struct Data<common::Scalar>;
+
+} // namespace dense
+
+} // namespace piqp
+
+#else
 #include "piqp/dense/data.tpp"
 #endif
 

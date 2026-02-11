@@ -6,6 +6,7 @@
 // LICENSE file in the root directory of this source tree.
 
 #include "piqp/dense/data.hpp"
+#include "piqp/dense/data.tpp"
 
 namespace piqp
 {
