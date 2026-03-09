@@ -1262,20 +1262,20 @@ Status SolverBase<T, I, Preconditioner, MatrixType>::cold_start_init()
         for (isize i = 0; i < m_data.n_h_l; i++)
         {
             Eigen::Index idx = m_data.h_l_idx(i);
-            nonneg_smoothing(m_result.z_l(idx) - delta_z, m_result.info.mu, m_result.z_l(idx), m_result.s_l(idx));
+            nonneg_smoothing(m_result.s_l(idx) - m_result.z_l(idx), m_result.info.mu, m_result.s_l(idx), m_result.z_l(idx));
         }
         for (isize i = 0; i < m_data.n_h_u; i++)
         {
             Eigen::Index idx = m_data.h_u_idx(i);
-            nonneg_smoothing(m_result.z_u(idx) - delta_z, m_result.info.mu, m_result.z_u(idx), m_result.s_u(idx));
+            nonneg_smoothing(m_result.s_u(idx) - m_result.z_u(idx), m_result.info.mu, m_result.s_u(idx), m_result.z_u(idx));
         }
         for (isize i = 0; i < m_data.n_x_l; i++)
         {
-            nonneg_smoothing(m_result.z_bl(i) - delta_z, m_result.info.mu, m_result.z_bl(i), m_result.s_bl(i));
+            nonneg_smoothing(m_result.s_bl(i) - m_result.z_bl(i), m_result.info.mu, m_result.s_bl(i), m_result.z_bl(i));
         }
         for (isize i = 0; i < m_data.n_x_u; i++)
         {
-            nonneg_smoothing(m_result.z_bu(i) - delta_z, m_result.info.mu, m_result.z_bu(i), m_result.s_bu(i));
+            nonneg_smoothing(m_result.s_bu(i) - m_result.z_bu(i), m_result.info.mu, m_result.s_bu(i), m_result.z_bu(i));
         }
 
         m_result.info.mu = calculate_mu();
