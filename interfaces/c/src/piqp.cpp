@@ -148,6 +148,7 @@ static void piqp_set_default_settings(piqp_settings* settings, Solver&& solver)
     settings->iterative_refinement_min_improvement_rate = solver.settings().iterative_refinement_min_improvement_rate;
     settings->iterative_refinement_static_regularization_eps = solver.settings().iterative_refinement_static_regularization_eps;
     settings->iterative_refinement_static_regularization_rel = solver.settings().iterative_refinement_static_regularization_rel;
+    settings->warm_start = solver.settings().warm_start;
     settings->verbose = solver.settings().verbose;
     settings->compute_timings = solver.settings().compute_timings;
 }
@@ -290,6 +291,7 @@ void piqp_update_settings(piqp_workspace* workspace, const piqp_settings* settin
         solver->settings().iterative_refinement_min_improvement_rate = settings->iterative_refinement_min_improvement_rate;
         solver->settings().iterative_refinement_static_regularization_eps = settings->iterative_refinement_static_regularization_eps;
         solver->settings().iterative_refinement_static_regularization_rel = settings->iterative_refinement_static_regularization_rel;
+        solver->settings().warm_start = settings->warm_start;
         solver->settings().verbose = settings->verbose;
         solver->settings().compute_timings = settings->compute_timings;
     }
@@ -323,6 +325,7 @@ void piqp_update_settings(piqp_workspace* workspace, const piqp_settings* settin
         solver->settings().iterative_refinement_min_improvement_rate = settings->iterative_refinement_min_improvement_rate;
         solver->settings().iterative_refinement_static_regularization_eps = settings->iterative_refinement_static_regularization_eps;
         solver->settings().iterative_refinement_static_regularization_rel = settings->iterative_refinement_static_regularization_rel;
+        solver->settings().warm_start = settings->warm_start;
         solver->settings().verbose = settings->verbose;
         solver->settings().compute_timings = settings->compute_timings;
     }
@@ -366,6 +369,34 @@ void piqp_update_sparse(piqp_workspace* workspace,
 
     auto* solver = reinterpret_cast<SparseSolver*>(workspace->solver_handle);
     solver->update(P_, c_, A_, b_, G_, h_l_, h_u_, x_l_, x_u_);
+}
+
+void piqp_set_warm_start(piqp_workspace* workspace,
+                         piqp_float* x, piqp_float* y,
+                         piqp_float* z_l, piqp_float* z_u,
+                         piqp_float* z_bl, piqp_float* z_bu)
+{
+    piqp_int n = workspace->solver_info.n;
+    piqp_int p = workspace->solver_info.p;
+    piqp_int m = workspace->solver_info.m;
+
+    Eigen::Map<CVec> x_(x, n);
+    Eigen::Map<CVec> y_(y, p);
+    piqp::optional<Eigen::Map<CVec>> z_l_ = piqp_optional_vec_map(z_l, m);
+    piqp::optional<Eigen::Map<CVec>> z_u_ = piqp_optional_vec_map(z_u, m);
+    piqp::optional<Eigen::Map<CVec>> z_bl_ = piqp_optional_vec_map(z_bl, n);
+    piqp::optional<Eigen::Map<CVec>> z_bu_ = piqp_optional_vec_map(z_bu, n);
+
+    if (workspace->solver_info.is_dense)
+    {
+        auto* solver = reinterpret_cast<DenseSolver*>(workspace->solver_handle);
+        solver->set_warm_start(x_, y_, z_l_, z_u_, z_bl_, z_bu_);
+    }
+    else
+    {
+        auto* solver = reinterpret_cast<SparseSolver*>(workspace->solver_handle);
+        solver->set_warm_start(x_, y_, z_l_, z_u_, z_bl_, z_bu_);
+    }
 }
 
 piqp_status piqp_solve(piqp_workspace* workspace)

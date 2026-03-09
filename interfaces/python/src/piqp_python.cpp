@@ -124,6 +124,7 @@ PYBIND11_MODULE(PYTHON_MODULE_NAME, m) {
         .def_readwrite("iterative_refinement_min_improvement_rate", &piqp::Settings<T>::iterative_refinement_min_improvement_rate)
         .def_readwrite("iterative_refinement_static_regularization_eps", &piqp::Settings<T>::iterative_refinement_static_regularization_eps)
         .def_readwrite("iterative_refinement_static_regularization_rel", &piqp::Settings<T>::iterative_refinement_static_regularization_rel)
+        .def_readwrite("warm_start", &piqp::Settings<T>::warm_start)
         .def_readwrite("verbose", &piqp::Settings<T>::verbose)
         .def_readwrite("compute_timings", &piqp::Settings<T>::compute_timings);
 
@@ -168,6 +169,10 @@ PYBIND11_MODULE(PYTHON_MODULE_NAME, m) {
              py::arg("A") = piqp::nullopt, py::arg("b") = piqp::nullopt,
              py::arg("G") = piqp::nullopt, py::arg("h_l") = piqp::nullopt, py::arg("h_u") = piqp::nullopt,
              py::arg("x_l") = piqp::nullopt, py::arg("x_u") = piqp::nullopt)
+        .def("set_warm_start", &SparseSolver::set_warm_start,
+             py::arg("x"), py::arg("y"),
+             py::arg("z_l") = piqp::nullopt, py::arg("z_u") = piqp::nullopt,
+             py::arg("z_bl") = piqp::nullopt, py::arg("z_bu") = piqp::nullopt)
         .def("solve", &SparseSolver::solve);
 
     using DenseSolver = piqp::DenseSolver<T>;
@@ -185,6 +190,10 @@ PYBIND11_MODULE(PYTHON_MODULE_NAME, m) {
              py::arg("A") = piqp::nullopt, py::arg("b") = piqp::nullopt,
              py::arg("G") = piqp::nullopt, py::arg("h_l") = piqp::nullopt, py::arg("h_u") = piqp::nullopt,
              py::arg("x_l") = piqp::nullopt, py::arg("x_u") = piqp::nullopt)
+        .def("set_warm_start", &DenseSolver::set_warm_start,
+             py::arg("x"), py::arg("y"),
+             py::arg("z_l") = piqp::nullopt, py::arg("z_u") = piqp::nullopt,
+             py::arg("z_bl") = piqp::nullopt, py::arg("z_bu") = piqp::nullopt)
         .def("solve", &DenseSolver::solve);
 
 #ifdef VERSION_INFO

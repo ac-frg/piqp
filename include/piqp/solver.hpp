@@ -68,6 +68,13 @@ public:
 
     const Result<T>& result() const { return m_result; }
 
+    void set_warm_start(const CVecRef<T>& x,
+                        const CVecRef<T>& y,
+                        const optional<CVecRef<T>>& z_l = nullopt,
+                        const optional<CVecRef<T>>& z_u = nullopt,
+                        const optional<CVecRef<T>>& z_bl = nullopt,
+                        const optional<CVecRef<T>>& z_bu = nullopt);
+
     Status solve();
 
 protected:
@@ -120,6 +127,10 @@ protected:
     T dual_res_r();
 
     T dual_prox_inf();
+
+    Status cold_start_init();
+
+    void warm_start_init();
 
     void unscale_results();
 
