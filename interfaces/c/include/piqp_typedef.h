@@ -99,6 +99,7 @@ typedef struct {
     piqp_float       iterative_refinement_min_improvement_rate;
     piqp_float       iterative_refinement_static_regularization_eps;
     piqp_float       iterative_refinement_static_regularization_rel;
+    piqp_int        warm_start;
     piqp_int        verbose;
     piqp_int        compute_timings;
 } piqp_settings;
