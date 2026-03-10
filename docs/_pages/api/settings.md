@@ -35,5 +35,22 @@ All interfaces have the same internal solver settings. Note that the default set
 | `iterative_refinement_min_improvement_rate`      | `5.0`                              | Minimum improvement rate for iterative refinement.                                                                                  |
 | `iterative_refinement_static_regularization_eps` | `1e-8`                             | Static regularization for KKT system for iterative refinement.                                                                      |
 | `iterative_refinement_static_regularization_rel` | `eps^2`                            | Static regularization w.r.t. the maximum abs diagonal term of KKT system.                                                           |
+| `warm_start`                                     | `false`                            | Warm start the solver from the previous solution on update and re-solve. See [Warm Starting](#warm-starting).                       |
 | `verbose`                                        | `false`                            | Verbose printing.                                                                                                                   |
 | `compute_timings`                                | `false`                            | Measure timing information internally.                                                                                              |
+
+## Warm Starting
+
+PIQP supports warm starting the solver from a previous or user-provided solution. This can significantly reduce the number of iterations needed to solve a sequence of related problems (e.g., in model predictive control or parametric optimization). The warm starting technique is based on the approach described in [[Chen et al., 2025]](https://arxiv.org/abs/2512.00693).
+
+There are two ways to warm start the solver:
+
+### Automatic Warm Starting
+
+When `warm_start` is set to `true`, the solver automatically uses the solution from the previous solve as a warm start point after calling `update` followed by `solve`. This is the simplest approach for solving a sequence of problems where the data changes incrementally.
+
+### Manual Warm Starting
+
+All interfaces provide a `set_warm_start` method that allows you to manually specify the warm start point. This is useful when you have an approximate solution from an external source.
+
+The method takes the primal variable `x` and the equality dual variable `y` as required arguments. The inequality dual variables `z_l`, `z_u`, `z_bl`, `z_bu` are optional — if not provided, they default to zero and the solver computes the slack variables from `x`.
