@@ -123,6 +123,7 @@ octave_value settings_to_ov_struct(const piqp::Settings<double>& settings)
     ov_struct.assign("iterative_refinement_min_improvement_rate", octave_value(settings.iterative_refinement_min_improvement_rate));
     ov_struct.assign("iterative_refinement_static_regularization_eps", octave_value(settings.iterative_refinement_static_regularization_eps));
     ov_struct.assign("iterative_refinement_static_regularization_rel", octave_value(settings.iterative_refinement_static_regularization_rel));
+    ov_struct.assign("warm_start", octave_value(settings.warm_start));
     ov_struct.assign("verbose", octave_value(settings.verbose));
     ov_struct.assign("compute_timings", octave_value(settings.compute_timings));
 
@@ -141,7 +142,7 @@ void copy_ov_struct_to_settings(const octave_scalar_map& ov_struct, piqp::Settin
     settings.infeasibility_threshold = ov_struct.getfield("infeasibility_threshold").double_value();
     settings.reg_lower_limit = ov_struct.getfield("reg_lower_limit").double_value();
     settings.reg_finetune_lower_limit = ov_struct.getfield("reg_finetune_lower_limit").double_value();
-    settings.reg_finetune_primal_update_threshold = ov_struct.getfield("check_duality_gap").int_value();
+    settings.reg_finetune_primal_update_threshold = ov_struct.getfield("reg_finetune_primal_update_threshold").int_value();
     settings.reg_finetune_dual_update_threshold = ov_struct.getfield("reg_finetune_dual_update_threshold").int_value();
     settings.max_iter = ov_struct.getfield("max_iter").int_value();
     settings.max_factor_retires = ov_struct.getfield("max_factor_retires").int_value();
@@ -157,6 +158,7 @@ void copy_ov_struct_to_settings(const octave_scalar_map& ov_struct, piqp::Settin
     settings.iterative_refinement_min_improvement_rate = ov_struct.getfield("iterative_refinement_min_improvement_rate").double_value();
     settings.iterative_refinement_static_regularization_eps = ov_struct.getfield("iterative_refinement_static_regularization_eps").double_value();
     settings.iterative_refinement_static_regularization_rel = ov_struct.getfield("iterative_refinement_static_regularization_rel").double_value();
+    settings.warm_start = ov_struct.getfield("warm_start").bool_value();
     settings.verbose = ov_struct.getfield("verbose").bool_value();
     settings.compute_timings = ov_struct.getfield("compute_timings").bool_value();
 }
@@ -372,6 +374,38 @@ DEFUN_DLD(piqp_oct, args, nargout, "")
             Eigen::Map<SparseMat> G(m, n, (Eigen::Index) G_ref.nnz(), Gp.data(), Gi.data(), G_ref.sparse_matrix_value().xdata());
 
             oct_handle->as_sparse_ptr()->setup(P, c, A, b, G, h_l, h_u, x_l, x_u);
+        }
+
+        return {};
+    }
+
+    if (args(0).string_value() == "set_warm_start") {
+        const octave_value& x_ref = args(2);
+        const octave_value& y_ref = args(3);
+        const octave_value& z_l_ref = args(4);
+        const octave_value& z_u_ref = args(5);
+        const octave_value& z_bl_ref = args(6);
+        const octave_value& z_bu_ref = args(7);
+
+        int n_ws = x_ref.vector_value().numel();
+        int p_ws = y_ref.vector_value().numel();
+
+        Eigen::Map<const Vec> x(x_ref.vector_value().data(), n_ws);
+        Eigen::Map<const Vec> y(y_ref.vector_value().data(), p_ws);
+
+        piqp::optional<Eigen::Map<const Vec>> z_l;
+        piqp::optional<Eigen::Map<const Vec>> z_u;
+        piqp::optional<Eigen::Map<const Vec>> z_bl;
+        piqp::optional<Eigen::Map<const Vec>> z_bu;
+        if (!z_l_ref.isempty()) { z_l.emplace(z_l_ref.vector_value().data(), z_l_ref.vector_value().numel()); }
+        if (!z_u_ref.isempty()) { z_u.emplace(z_u_ref.vector_value().data(), z_u_ref.vector_value().numel()); }
+        if (!z_bl_ref.isempty()) { z_bl.emplace(z_bl_ref.vector_value().data(), z_bl_ref.vector_value().numel()); }
+        if (!z_bu_ref.isempty()) { z_bu.emplace(z_bu_ref.vector_value().data(), z_bu_ref.vector_value().numel()); }
+
+        if (oct_handle->isDense()) {
+            oct_handle->as_dense_ptr()->set_warm_start(x, y, z_l, z_u, z_bl, z_bu);
+        } else {
+            oct_handle->as_sparse_ptr()->set_warm_start(x, y, z_l, z_u, z_bl, z_bu);
         }
 
         return {};
