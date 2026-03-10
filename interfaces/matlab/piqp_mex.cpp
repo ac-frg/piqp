@@ -52,6 +52,7 @@ const char* PIQP_SETTINGS_FIELDS[] = {"rho_init",
                                       "iterative_refinement_min_improvement_rate",
                                       "iterative_refinement_static_regularization_eps",
                                       "iterative_refinement_static_regularization_rel",
+                                      "warm_start",
                                       "verbose",
                                       "compute_timings"};
 
@@ -206,6 +207,7 @@ mxArray* settings_to_mx_struct(const piqp::Settings<double>& settings)
     mxSetField(mx_ptr, 0, "iterative_refinement_min_improvement_rate", mxCreateDoubleScalar(settings.iterative_refinement_min_improvement_rate));
     mxSetField(mx_ptr, 0, "iterative_refinement_static_regularization_eps", mxCreateDoubleScalar(settings.iterative_refinement_static_regularization_eps));
     mxSetField(mx_ptr, 0, "iterative_refinement_static_regularization_rel", mxCreateDoubleScalar(settings.iterative_refinement_static_regularization_rel));
+    mxSetField(mx_ptr, 0, "warm_start", mxCreateDoubleScalar(settings.warm_start));
     mxSetField(mx_ptr, 0, "verbose", mxCreateDoubleScalar(settings.verbose));
     mxSetField(mx_ptr, 0, "compute_timings", mxCreateDoubleScalar(settings.compute_timings));
 
@@ -242,6 +244,7 @@ void copy_mx_struct_to_settings(const mxArray* mx_ptr, piqp::Settings<double>& s
     settings.iterative_refinement_min_improvement_rate = (double) mxGetScalar(mxGetField(mx_ptr, 0, "iterative_refinement_min_improvement_rate"));
     settings.iterative_refinement_static_regularization_eps = (double) mxGetScalar(mxGetField(mx_ptr, 0, "iterative_refinement_static_regularization_eps"));
     settings.iterative_refinement_static_regularization_rel = (double) mxGetScalar(mxGetField(mx_ptr, 0, "iterative_refinement_static_regularization_rel"));
+    settings.warm_start = (bool) mxGetScalar(mxGetField(mx_ptr, 0, "warm_start"));
     settings.verbose = (bool) mxGetScalar(mxGetField(mx_ptr, 0, "verbose"));
     settings.compute_timings = (bool) mxGetScalar(mxGetField(mx_ptr, 0, "compute_timings"));
 }
@@ -445,6 +448,38 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
             Eigen::Map<SparseMat> G(m, n, (Eigen::Index) mxGetNzmax(G_ptr), Gp.data(), Gi.data(), mxGetPr(G_ptr));
 
             mex_handle->as_sparse_ptr()->setup(P, c, A, b, G, h_l, h_u, x_l, x_u);
+        }
+
+        return;
+    }
+
+    if (!strcmp("set_warm_start", cmd)) {
+        const mxArray* x_ptr = prhs[2];
+        const mxArray* y_ptr = prhs[3];
+        const mxArray* z_l_ptr = prhs[4];
+        const mxArray* z_u_ptr = prhs[5];
+        const mxArray* z_bl_ptr = prhs[6];
+        const mxArray* z_bu_ptr = prhs[7];
+
+        int n_ws = (int) mxGetM(x_ptr);
+        int p_ws = (int) mxGetM(y_ptr);
+
+        Eigen::Map<Vec> x(mxGetPr(x_ptr), n_ws);
+        Eigen::Map<Vec> y(mxGetPr(y_ptr), p_ws);
+
+        piqp::optional<Eigen::Map<Vec>> z_l;
+        piqp::optional<Eigen::Map<Vec>> z_u;
+        piqp::optional<Eigen::Map<Vec>> z_bl;
+        piqp::optional<Eigen::Map<Vec>> z_bu;
+        if (!mxIsEmpty(z_l_ptr)) { z_l = Eigen::Map<Vec>(mxGetPr(z_l_ptr), (int) mxGetM(z_l_ptr)); }
+        if (!mxIsEmpty(z_u_ptr)) { z_u = Eigen::Map<Vec>(mxGetPr(z_u_ptr), (int) mxGetM(z_u_ptr)); }
+        if (!mxIsEmpty(z_bl_ptr)) { z_bl = Eigen::Map<Vec>(mxGetPr(z_bl_ptr), (int) mxGetM(z_bl_ptr)); }
+        if (!mxIsEmpty(z_bu_ptr)) { z_bu = Eigen::Map<Vec>(mxGetPr(z_bu_ptr), (int) mxGetM(z_bu_ptr)); }
+
+        if (mex_handle->isDense()) {
+            mex_handle->as_dense_ptr()->set_warm_start(x, y, z_l, z_u, z_bl, z_bu);
+        } else {
+            mex_handle->as_sparse_ptr()->set_warm_start(x, y, z_l, z_u, z_bl, z_bu);
         }
 
         return;
