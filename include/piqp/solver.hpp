@@ -130,6 +130,8 @@ protected:
 
     Status cold_start_init();
 
+    T cold_start_compute_mu();
+
     void warm_start_init();
 
     void unscale_results();
