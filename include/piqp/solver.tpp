@@ -1133,6 +1133,53 @@ T SolverBase<T, I, Preconditioner, MatrixType>::dual_prox_inf()
 }
 
 template<typename T, typename I, typename Preconditioner, int MatrixType>
+T SolverBase<T, I, Preconditioner, MatrixType>::cold_start_compute_mu()
+{
+    auto s_bl = m_result.s_bl.head(m_data.n_x_l);
+    auto s_bu = m_result.s_bu.head(m_data.n_x_u);
+    auto z_bl = m_result.z_bl.head(m_data.n_x_l);
+    auto z_bu = m_result.z_bu.head(m_data.n_x_u);
+
+    // Project s and z into the non-negative cone, then average complementarity
+    T delta_s = T(0);
+    if (m_data.m > 0) {
+        delta_s = (std::max)(delta_s, -m_result.s_l.minCoeff());
+        delta_s = (std::max)(delta_s, -m_result.s_u.minCoeff());
+    }
+    if (m_data.n_x_l > 0) delta_s = (std::max)(delta_s, -s_bl.minCoeff());
+    if (m_data.n_x_u > 0) delta_s = (std::max)(delta_s, -s_bu.minCoeff());
+
+    T delta_z = T(0);
+    if (m_data.m > 0) {
+        delta_z = (std::max)(delta_z, -m_result.z_l.minCoeff());
+        delta_z = (std::max)(delta_z, -m_result.z_u.minCoeff());
+    }
+    if (m_data.n_x_l > 0) delta_z = (std::max)(delta_z, -z_bl.minCoeff());
+    if (m_data.n_x_u > 0) delta_z = (std::max)(delta_z, -z_bu.minCoeff());
+
+    T sum_mu = T(0);
+    for (isize i = 0; i < m_data.n_h_l; i++)
+    {
+        Eigen::Index idx = m_data.h_l_idx(i);
+        sum_mu += (m_result.s_l(idx) + delta_s) * (m_result.z_l(idx) + delta_z);
+    }
+    for (isize i = 0; i < m_data.n_h_u; i++)
+    {
+        Eigen::Index idx = m_data.h_u_idx(i);
+        sum_mu += (m_result.s_u(idx) + delta_s) * (m_result.z_u(idx) + delta_z);
+    }
+    for (isize i = 0; i < m_data.n_x_l; i++)
+    {
+        sum_mu += (s_bl(i) + delta_s) * (z_bl(i) + delta_z);
+    }
+    for (isize i = 0; i < m_data.n_x_u; i++)
+    {
+        sum_mu += (s_bu(i) + delta_s) * (z_bu(i) + delta_z);
+    }
+    return (std::max)(sum_mu / T(m_data.n_h_l + m_data.n_h_u + m_data.n_x_l + m_data.n_x_u), T(1e-10));
+}
+
+template<typename T, typename I, typename Preconditioner, int MatrixType>
 Status SolverBase<T, I, Preconditioner, MatrixType>::cold_start_init()
 {
     Timer<T> timer;
@@ -1203,10 +1250,23 @@ Status SolverBase<T, I, Preconditioner, MatrixType>::cold_start_init()
     res.z_u = m_data.h_u;
     res.z_bl = -m_data.x_l;
     res.z_bu = m_data.x_u;
+    // Set RHS for the complementarity row: S*dz + Z*ds = alpha for active constraints.
+    // With S = Z = I (active) this gives s + z = alpha, biasing s toward the interior.
+    T alpha = m_settings.cold_start_alpha;
     res.s_l.setZero();
     res.s_u.setZero();
+    for (isize i = 0; i < m_data.n_h_l; i++)
+    {
+        res.s_l(m_data.h_l_idx(i)) = alpha;
+    }
+    for (isize i = 0; i < m_data.n_h_u; i++)
+    {
+        res.s_u(m_data.h_u_idx(i)) = alpha;
+    }
     res.s_bl.setZero();
     res.s_bu.setZero();
+    res.s_bl.head(m_data.n_x_l).setConstant(alpha);
+    res.s_bu.head(m_data.n_x_u).setConstant(alpha);
 
     if (m_settings.compute_timings) {
         timer.start();
@@ -1220,45 +1280,9 @@ Status SolverBase<T, I, Preconditioner, MatrixType>::cold_start_init()
 
     if (m_data.m + m_data.n_x_l + m_data.n_x_u > 0)
     {
-        auto s_bl = m_result.s_bl.head(m_data.n_x_l);
-        auto s_bu = m_result.s_bu.head(m_data.n_x_u);
-        auto z_bl = m_result.z_bl.head(m_data.n_x_l);
-        auto z_bu = m_result.z_bu.head(m_data.n_x_u);
+        m_result.info.mu = cold_start_compute_mu();
 
-        T delta_s = T(0);
-        if (m_data.m > 0) {
-            delta_s = (std::max)(delta_s, -m_result.s_l.minCoeff());
-            delta_s = (std::max)(delta_s, -m_result.s_u.minCoeff());
-        }
-        if (m_data.n_x_l > 0) delta_s = (std::max)(delta_s, -s_bl.minCoeff());
-        if (m_data.n_x_u > 0) delta_s = (std::max)(delta_s, -s_bu.minCoeff());
-        T delta_z = T(0);
-        if (m_data.m > 0) {
-            delta_z = (std::max)(delta_z, -m_result.z_l.minCoeff());
-            delta_z = (std::max)(delta_z, -m_result.z_u.minCoeff());
-        }
-        if (m_data.n_x_l > 0) delta_z = (std::max)(delta_z, -z_bl.minCoeff());
-        if (m_data.n_x_u > 0) delta_z = (std::max)(delta_z, -z_bu.minCoeff());
-
-        for (isize i = 0; i < m_data.n_h_l; i++)
-        {
-            Eigen::Index idx = m_data.h_l_idx(i);
-            m_result.s_l(idx) += delta_s;
-            m_result.z_l(idx) += delta_z;
-        }
-        for (isize i = 0; i < m_data.n_h_u; i++)
-        {
-            Eigen::Index idx = m_data.h_u_idx(i);
-            m_result.s_u(idx) += delta_s;
-            m_result.z_u(idx) += delta_z;
-        }
-        s_bl.array() += delta_s;
-        s_bu.array() += delta_s;
-        z_bl.array() += delta_z;
-        z_bu.array() += delta_z;
-
-        m_result.info.mu = (std::max)(calculate_mu(), T(1e-10));
-
+        // Apply smoothing operator to place (s, z) on the central path
         for (isize i = 0; i < m_data.n_h_l; i++)
         {
             Eigen::Index idx = m_data.h_l_idx(i);
