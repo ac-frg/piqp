@@ -170,7 +170,7 @@ PYBIND11_MODULE(PYTHON_MODULE_NAME, m) {
              py::arg("G") = piqp::nullopt, py::arg("h_l") = piqp::nullopt, py::arg("h_u") = piqp::nullopt,
              py::arg("x_l") = piqp::nullopt, py::arg("x_u") = piqp::nullopt)
         .def("set_warm_start", &SparseSolver::set_warm_start,
-             py::arg("x"), py::arg("y"),
+             py::arg("x"), py::arg("y") = piqp::nullopt,
              py::arg("z_l") = piqp::nullopt, py::arg("z_u") = piqp::nullopt,
              py::arg("z_bl") = piqp::nullopt, py::arg("z_bu") = piqp::nullopt)
         .def("solve", &SparseSolver::solve);
@@ -191,7 +191,7 @@ PYBIND11_MODULE(PYTHON_MODULE_NAME, m) {
              py::arg("G") = piqp::nullopt, py::arg("h_l") = piqp::nullopt, py::arg("h_u") = piqp::nullopt,
              py::arg("x_l") = piqp::nullopt, py::arg("x_u") = piqp::nullopt)
         .def("set_warm_start", &DenseSolver::set_warm_start,
-             py::arg("x"), py::arg("y"),
+             py::arg("x"), py::arg("y") = piqp::nullopt,
              py::arg("z_l") = piqp::nullopt, py::arg("z_u") = piqp::nullopt,
              py::arg("z_bl") = piqp::nullopt, py::arg("z_bu") = piqp::nullopt)
         .def("solve", &DenseSolver::solve);

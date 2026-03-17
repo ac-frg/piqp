@@ -388,15 +388,15 @@ DEFUN_DLD(piqp_oct, args, nargout, "")
         const octave_value& z_bu_ref = args(7);
 
         int n_ws = x_ref.vector_value().numel();
-        int p_ws = y_ref.vector_value().numel();
 
         Eigen::Map<const Vec> x(x_ref.vector_value().data(), n_ws);
-        Eigen::Map<const Vec> y(y_ref.vector_value().data(), p_ws);
 
+        piqp::optional<Eigen::Map<const Vec>> y;
         piqp::optional<Eigen::Map<const Vec>> z_l;
         piqp::optional<Eigen::Map<const Vec>> z_u;
         piqp::optional<Eigen::Map<const Vec>> z_bl;
         piqp::optional<Eigen::Map<const Vec>> z_bu;
+        if (!y_ref.isempty()) { y.emplace(y_ref.vector_value().data(), y_ref.vector_value().numel()); }
         if (!z_l_ref.isempty()) { z_l.emplace(z_l_ref.vector_value().data(), z_l_ref.vector_value().numel()); }
         if (!z_u_ref.isempty()) { z_u.emplace(z_u_ref.vector_value().data(), z_u_ref.vector_value().numel()); }
         if (!z_bl_ref.isempty()) { z_bl.emplace(z_bl_ref.vector_value().data(), z_bl_ref.vector_value().numel()); }

@@ -37,7 +37,7 @@ SolverBase<T, I, Preconditioner, MatrixType>::SolverBase()
 template<typename T, typename I, typename Preconditioner, int MatrixType>
 void SolverBase<T, I, Preconditioner, MatrixType>::set_warm_start(
     const CVecRef<T>& x,
-    const CVecRef<T>& y,
+    const optional<CVecRef<T>>& y,
     const optional<CVecRef<T>>& z_l,
     const optional<CVecRef<T>>& z_u,
     const optional<CVecRef<T>>& z_bl,
@@ -50,14 +50,20 @@ void SolverBase<T, I, Preconditioner, MatrixType>::set_warm_start(
     }
 
     if (x.size() != m_data.n) { piqp_eprint("x has wrong dimensions\n"); return; }
-    if (y.size() != m_data.p) { piqp_eprint("y has wrong dimensions\n"); return; }
+    if (y.has_value() && y->size() != m_data.p) { piqp_eprint("y has wrong dimensions\n"); return; }
     if (z_l.has_value() && z_l->size() != m_data.m) { piqp_eprint("z_l has wrong dimensions\n"); return; }
     if (z_u.has_value() && z_u->size() != m_data.m) { piqp_eprint("z_u has wrong dimensions\n"); return; }
     if (z_bl.has_value() && z_bl->size() != m_data.n) { piqp_eprint("z_bl has wrong dimensions\n"); return; }
     if (z_bu.has_value() && z_bu->size() != m_data.n) { piqp_eprint("z_bu has wrong dimensions\n"); return; }
 
     m_result.x = x;
-    m_result.y = y;
+
+    // Set equality duals
+    if (y.has_value()) {
+        m_result.y = *y;
+    } else {
+        m_result.y.setZero();
+    }
 
     // Set inequality duals
     if (z_l.has_value()) {
@@ -84,6 +90,9 @@ void SolverBase<T, I, Preconditioner, MatrixType>::set_warm_start(
     }
 
     // Slacks are computed from x in warm_start_init, no need to set here.
+    m_warm_start_has_z = z_l.has_value() || z_u.has_value()
+                         || z_bl.has_value() || z_bu.has_value();
+    m_warm_start_from_solve = false;
 
     // Mark as having a valid warm-start point
     m_result.info.status = Status::PIQP_SOLVED;
@@ -168,6 +177,9 @@ Status SolverBase<T, I, Preconditioner, MatrixType>::solve()
         }
     }
 
+    // After a successful solve, the full primal-dual solution is available for warm starting
+    m_warm_start_from_solve = (status == Status::PIQP_SOLVED);
+    m_warm_start_has_z = m_warm_start_from_solve;
     m_first_run = false;
 
     return status;
@@ -468,7 +480,11 @@ Status SolverBase<T, I, Preconditioner, MatrixType>::solve_impl()
 
     if (use_warm_start)
     {
-        warm_start_init();
+        Status warm_status = warm_start_init();
+        if (warm_status != Status::PIQP_UNSOLVED)
+        {
+            return warm_status;
+        }
     }
     else
     {
@@ -1180,6 +1196,29 @@ T SolverBase<T, I, Preconditioner, MatrixType>::cold_start_compute_mu()
 }
 
 template<typename T, typename I, typename Preconditioner, int MatrixType>
+void SolverBase<T, I, Preconditioner, MatrixType>::apply_smoothing(T mu)
+{
+    for (isize i = 0; i < m_data.n_h_l; i++)
+    {
+        Eigen::Index idx = m_data.h_l_idx(i);
+        nonneg_smoothing(m_result.s_l(idx) - m_result.z_l(idx), mu, m_result.s_l(idx), m_result.z_l(idx));
+    }
+    for (isize i = 0; i < m_data.n_h_u; i++)
+    {
+        Eigen::Index idx = m_data.h_u_idx(i);
+        nonneg_smoothing(m_result.s_u(idx) - m_result.z_u(idx), mu, m_result.s_u(idx), m_result.z_u(idx));
+    }
+    for (isize i = 0; i < m_data.n_x_l; i++)
+    {
+        nonneg_smoothing(m_result.s_bl(i) - m_result.z_bl(i), mu, m_result.s_bl(i), m_result.z_bl(i));
+    }
+    for (isize i = 0; i < m_data.n_x_u; i++)
+    {
+        nonneg_smoothing(m_result.s_bu(i) - m_result.z_bu(i), mu, m_result.s_bu(i), m_result.z_bu(i));
+    }
+}
+
+template<typename T, typename I, typename Preconditioner, int MatrixType>
 Status SolverBase<T, I, Preconditioner, MatrixType>::cold_start_init()
 {
     Timer<T> timer;
@@ -1281,27 +1320,7 @@ Status SolverBase<T, I, Preconditioner, MatrixType>::cold_start_init()
     if (m_data.m + m_data.n_x_l + m_data.n_x_u > 0)
     {
         m_result.info.mu = cold_start_compute_mu();
-
-        // Apply smoothing operator to place (s, z) on the central path
-        for (isize i = 0; i < m_data.n_h_l; i++)
-        {
-            Eigen::Index idx = m_data.h_l_idx(i);
-            nonneg_smoothing(m_result.s_l(idx) - m_result.z_l(idx), m_result.info.mu, m_result.s_l(idx), m_result.z_l(idx));
-        }
-        for (isize i = 0; i < m_data.n_h_u; i++)
-        {
-            Eigen::Index idx = m_data.h_u_idx(i);
-            nonneg_smoothing(m_result.s_u(idx) - m_result.z_u(idx), m_result.info.mu, m_result.s_u(idx), m_result.z_u(idx));
-        }
-        for (isize i = 0; i < m_data.n_x_l; i++)
-        {
-            nonneg_smoothing(m_result.s_bl(i) - m_result.z_bl(i), m_result.info.mu, m_result.s_bl(i), m_result.z_bl(i));
-        }
-        for (isize i = 0; i < m_data.n_x_u; i++)
-        {
-            nonneg_smoothing(m_result.s_bu(i) - m_result.z_bu(i), m_result.info.mu, m_result.s_bu(i), m_result.z_bu(i));
-        }
-
+        apply_smoothing(m_result.info.mu);
         m_result.info.mu = calculate_mu();
     }
 
@@ -1309,14 +1328,10 @@ Status SolverBase<T, I, Preconditioner, MatrixType>::cold_start_init()
 }
 
 template<typename T, typename I, typename Preconditioner, int MatrixType>
-void SolverBase<T, I, Preconditioner, MatrixType>::warm_start_init()
+Status SolverBase<T, I, Preconditioner, MatrixType>::warm_start_init()
 {
-    // Scale the unscaled solution from the previous solve into the
-    // current preconditioner's space. m_result still holds the previous
-    // unscaled solution (after unscale_results + restore_dual in solve()).
-    // We need to undo restore_dual first, then apply scaling.
-
-    // Undo restore_dual: swap bounds back to packed layout and clear infinities
+    // Scale the unscaled warm-start point into the current preconditioner's space.
+    // Undo restore_dual: swap bounds back to packed layout
     for (isize i = 0; i < m_data.n_x_l; i++)
     {
         Eigen::Index idx = m_data.x_l_idx(i);
@@ -1330,92 +1345,176 @@ void SolverBase<T, I, Preconditioner, MatrixType>::warm_start_init()
         std::swap(m_result.s_bu(i), m_result.s_bu(idx));
     }
 
-    // Scale primal and dual variables into the current preconditioner's space
+    // Scale primal, dual, and slack variables into the current preconditioner's space
     m_result.x = m_preconditioner.scale_primal(m_result.x);
     m_result.y = m_preconditioner.scale_dual_eq(m_result.y);
     m_result.z_l = m_preconditioner.scale_dual_ineq(m_result.z_l);
     m_result.z_u = m_preconditioner.scale_dual_ineq(m_result.z_u);
+    m_result.s_l = m_preconditioner.scale_slack_ineq(m_result.s_l);
+    m_result.s_u = m_preconditioner.scale_slack_ineq(m_result.s_u);
     for (isize i = 0; i < m_data.n_x_l; i++)
     {
         Eigen::Index idx = m_data.x_l_idx(i);
         m_result.z_bl(i) = m_preconditioner.scale_dual_b_i(m_result.z_bl(i), idx);
+        m_result.s_bl(i) = m_preconditioner.scale_slack_b_i(m_result.s_bl(i), idx);
     }
     for (isize i = 0; i < m_data.n_x_u; i++)
     {
         Eigen::Index idx = m_data.x_u_idx(i);
         m_result.z_bu(i) = m_preconditioner.scale_dual_b_i(m_result.z_bu(i), idx);
+        m_result.s_bu(i) = m_preconditioner.scale_slack_b_i(m_result.s_bu(i), idx);
     }
 
-    // Compute slacks from scaled x and constraint data
-    // s_l = Gx - h_l, s_u = h_u - Gx (only for active constraints)
-    m_result.s_l.setZero();
-    m_result.s_u.setZero();
-    if (m_data.m > 0)
+    // Step 1: Initial slack and dual estimates
+    if (m_warm_start_from_solve)
     {
-        // Use step.z_l as temporary for Gx
-        step.z_l.noalias() = m_data.GT.transpose() * m_result.x;
+        // Case A (previous solve): s and z are already in m_result from the previous solve.
+        // Project into the interior of the cone.
+        T eps = T(1e-10);
         for (isize i = 0; i < m_data.n_h_l; i++)
         {
             Eigen::Index idx = m_data.h_l_idx(i);
-            m_result.s_l(idx) = step.z_l(idx) - m_data.h_l(idx);
+            m_result.s_l(idx) = (std::max)(m_result.s_l(idx), eps);
+            m_result.z_l(idx) = (std::max)(m_result.z_l(idx), eps);
         }
         for (isize i = 0; i < m_data.n_h_u; i++)
         {
             Eigen::Index idx = m_data.h_u_idx(i);
-            m_result.s_u(idx) = m_data.h_u(idx) - step.z_l(idx);
+            m_result.s_u(idx) = (std::max)(m_result.s_u(idx), eps);
+            m_result.z_u(idx) = (std::max)(m_result.z_u(idx), eps);
+        }
+        for (isize i = 0; i < m_data.n_x_l; i++)
+        {
+            m_result.s_bl(i) = (std::max)(m_result.s_bl(i), eps);
+            m_result.z_bl(i) = (std::max)(m_result.z_bl(i), eps);
+        }
+        for (isize i = 0; i < m_data.n_x_u; i++)
+        {
+            m_result.s_bu(i) = (std::max)(m_result.s_bu(i), eps);
+            m_result.z_bu(i) = (std::max)(m_result.z_bu(i), eps);
         }
     }
-    // s_bl = x_b_scaling * x - x_l, s_bu = x_u - x_b_scaling * x
-    for (isize i = 0; i < m_data.n_x_l; i++)
+    else
     {
-        Eigen::Index idx = m_data.x_l_idx(i);
-        m_result.s_bl(i) = m_data.x_b_scaling(idx) * m_result.x(idx) - m_data.x_l(i);
-    }
-    for (isize i = 0; i < m_data.n_x_u; i++)
-    {
-        Eigen::Index idx = m_data.x_u_idx(i);
-        m_result.s_bu(i) = m_data.x_u(i) - m_data.x_b_scaling(idx) * m_result.x(idx);
+        // Cases B and C: compute slacks from x, then either project z or use smoothing.
+        T eps = T(1e-10);
+
+        // Compute slacks: s_l = Gx - h_l, s_u = h_u - Gx
+        m_result.s_l.setZero();
+        m_result.s_u.setZero();
+        if (m_data.m > 0)
+        {
+            // Use step.z_l as temporary for Gx
+            step.z_l.noalias() = m_data.GT.transpose() * m_result.x;
+            for (isize i = 0; i < m_data.n_h_l; i++)
+            {
+                Eigen::Index idx = m_data.h_l_idx(i);
+                m_result.s_l(idx) = step.z_l(idx) - m_data.h_l(idx);
+            }
+            for (isize i = 0; i < m_data.n_h_u; i++)
+            {
+                Eigen::Index idx = m_data.h_u_idx(i);
+                m_result.s_u(idx) = m_data.h_u(idx) - step.z_l(idx);
+            }
+        }
+        // s_bl = x_b_scaling * x - x_l, s_bu = x_u - x_b_scaling * x
+        for (isize i = 0; i < m_data.n_x_l; i++)
+        {
+            Eigen::Index idx = m_data.x_l_idx(i);
+            m_result.s_bl(i) = m_data.x_b_scaling(idx) * m_result.x(idx) - m_data.x_l(i);
+        }
+        for (isize i = 0; i < m_data.n_x_u; i++)
+        {
+            Eigen::Index idx = m_data.x_u_idx(i);
+            m_result.s_bu(i) = m_data.x_u(i) - m_data.x_b_scaling(idx) * m_result.x(idx);
+        }
+
+        if (m_warm_start_has_z)
+        {
+            // Case B: z provided by user. Project both s and z into the interior.
+            for (isize i = 0; i < m_data.n_h_l; i++)
+            {
+                Eigen::Index idx = m_data.h_l_idx(i);
+                m_result.s_l(idx) = (std::max)(m_result.s_l(idx), eps);
+                m_result.z_l(idx) = (std::max)(m_result.z_l(idx), eps);
+            }
+            for (isize i = 0; i < m_data.n_h_u; i++)
+            {
+                Eigen::Index idx = m_data.h_u_idx(i);
+                m_result.s_u(idx) = (std::max)(m_result.s_u(idx), eps);
+                m_result.z_u(idx) = (std::max)(m_result.z_u(idx), eps);
+            }
+            for (isize i = 0; i < m_data.n_x_l; i++)
+            {
+                m_result.s_bl(i) = (std::max)(m_result.s_bl(i), eps);
+                m_result.z_bl(i) = (std::max)(m_result.z_bl(i), eps);
+            }
+            for (isize i = 0; i < m_data.n_x_u; i++)
+            {
+                m_result.s_bu(i) = (std::max)(m_result.s_bu(i), eps);
+                m_result.z_bu(i) = (std::max)(m_result.z_bu(i), eps);
+            }
+        }
+        else
+        {
+            // Case C: no z provided. Apply smoothing with small mu_s to get
+            // initial s and z estimates from the Moreau decomposition.
+            // s_i = (s_hat_i + sqrt(s_hat_i^2 + 4*mu_s)) / 2
+            // z_i = (-s_hat_i + sqrt(s_hat_i^2 + 4*mu_s)) / 2
+            T mu_s = T(1e-6);
+            T four_mu_s = T(4) * mu_s;
+
+            for (isize i = 0; i < m_data.n_h_l; i++)
+            {
+                Eigen::Index idx = m_data.h_l_idx(i);
+                T s_hat = m_result.s_l(idx);
+                T d = std::sqrt(s_hat * s_hat + four_mu_s);
+                m_result.s_l(idx) = (s_hat + d) / T(2);
+                m_result.z_l(idx) = (-s_hat + d) / T(2);
+            }
+            for (isize i = 0; i < m_data.n_h_u; i++)
+            {
+                Eigen::Index idx = m_data.h_u_idx(i);
+                T s_hat = m_result.s_u(idx);
+                T d = std::sqrt(s_hat * s_hat + four_mu_s);
+                m_result.s_u(idx) = (s_hat + d) / T(2);
+                m_result.z_u(idx) = (-s_hat + d) / T(2);
+            }
+            for (isize i = 0; i < m_data.n_x_l; i++)
+            {
+                T s_hat = m_result.s_bl(i);
+                T d = std::sqrt(s_hat * s_hat + four_mu_s);
+                m_result.s_bl(i) = (s_hat + d) / T(2);
+                m_result.z_bl(i) = (-s_hat + d) / T(2);
+            }
+            for (isize i = 0; i < m_data.n_x_u; i++)
+            {
+                T s_hat = m_result.s_bu(i);
+                T d = std::sqrt(s_hat * s_hat + four_mu_s);
+                m_result.s_bu(i) = (s_hat + d) / T(2);
+                m_result.z_bu(i) = (-s_hat + d) / T(2);
+            }
+        }
     }
 
-    // Compute residual of the warm-start point on the new problem data
-    // to determine the smoothing parameter mu0.
+    // Step 2: Compute residual to determine smoothing parameter mu0
     update_residuals_nr();
+
     T mu0 = (std::max)(m_result.info.primal_res, m_result.info.dual_res);
     mu0 = (std::max)(mu0, T(1e-10));
 
-    // Apply smoothing operator to place (s_i, z_i) on the central path with s_i * z_i = mu_smooth.
-    // Cap the smoothing parameter to avoid creating unreasonably large z values
-    // (e.g. when duals are not provided and dual_res is inflated).
-    T mu_smooth = (std::min)(mu0, T(1));
-    for (isize i = 0; i < m_data.n_h_l; i++)
-    {
-        Eigen::Index idx = m_data.h_l_idx(i);
-        nonneg_smoothing(m_result.s_l(idx) - m_result.z_l(idx), mu_smooth, m_result.s_l(idx), m_result.z_l(idx));
-    }
-    for (isize i = 0; i < m_data.n_h_u; i++)
-    {
-        Eigen::Index idx = m_data.h_u_idx(i);
-        nonneg_smoothing(m_result.s_u(idx) - m_result.z_u(idx), mu_smooth, m_result.s_u(idx), m_result.z_u(idx));
-    }
-    for (isize i = 0; i < m_data.n_x_l; i++)
-    {
-        nonneg_smoothing(m_result.s_bl(i) - m_result.z_bl(i), mu_smooth, m_result.s_bl(i), m_result.z_bl(i));
-    }
-    for (isize i = 0; i < m_data.n_x_u; i++)
-    {
-        nonneg_smoothing(m_result.s_bu(i) - m_result.z_bu(i), mu_smooth, m_result.s_bu(i), m_result.z_bu(i));
-    }
-
+    // Step 3: Apply smoothing operator
+    apply_smoothing(mu0);
     m_result.info.mu = calculate_mu();
 
-    // Aggressive proximal parameters: use mu0 for rho and delta
-    // only when mu0 is small enough to indicate a near-optimal point.
-    // Otherwise, fall back to the default initialization.
+    // Aggressive proximal parameters when the point is near-optimal
     if (mu0 <= T(1))
     {
         m_result.info.rho = (std::max)(mu0, m_settings.reg_lower_limit);
         m_result.info.delta = (std::max)(mu0, m_settings.reg_lower_limit);
     }
+
+    return Status::PIQP_UNSOLVED;
 }
 
 template<typename T, typename I, typename Preconditioner, int MatrixType>

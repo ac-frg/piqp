@@ -55,6 +55,8 @@ protected:
     bool m_first_run = true;
     bool m_setup_done = false;
     bool m_enable_iterative_refinement = false;
+    bool m_warm_start_has_z = false;
+    bool m_warm_start_from_solve = false;
 
     BasicVariables<T> res_nr;    // non-regularized residuals
     Variables<T> res;            // residuals
@@ -69,7 +71,7 @@ public:
     const Result<T>& result() const { return m_result; }
 
     void set_warm_start(const CVecRef<T>& x,
-                        const CVecRef<T>& y,
+                        const optional<CVecRef<T>>& y = nullopt,
                         const optional<CVecRef<T>>& z_l = nullopt,
                         const optional<CVecRef<T>>& z_u = nullopt,
                         const optional<CVecRef<T>>& z_bl = nullopt,
@@ -132,7 +134,9 @@ protected:
 
     T cold_start_compute_mu();
 
-    void warm_start_init();
+    void apply_smoothing(T mu);
+
+    Status warm_start_init();
 
     void unscale_results();
 

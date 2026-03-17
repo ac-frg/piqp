@@ -505,7 +505,7 @@ TEST(DenseSolverTest, ManualWarmStart)
     DenseSolver<T> solver_warm;
     solver_warm.setup(qp_model.P, c_new, qp_model.A, qp_model.b,
                       qp_model.G, qp_model.h_l, qp_model.h_u, qp_model.x_l, qp_model.x_u);
-    solver_warm.set_warm_start(x_opt, y_opt);
+    solver_warm.set_warm_start(x_opt);
     status = solver_warm.solve();
     ASSERT_EQ(status, Status::PIQP_SOLVED);
     isize warm_iters_primal = solver_warm.result().info.iter;
