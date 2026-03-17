@@ -462,15 +462,15 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
         const mxArray* z_bu_ptr = prhs[7];
 
         int n_ws = (int) mxGetM(x_ptr);
-        int p_ws = (int) mxGetM(y_ptr);
 
         Eigen::Map<Vec> x(mxGetPr(x_ptr), n_ws);
-        Eigen::Map<Vec> y(mxGetPr(y_ptr), p_ws);
 
+        piqp::optional<Eigen::Map<Vec>> y;
         piqp::optional<Eigen::Map<Vec>> z_l;
         piqp::optional<Eigen::Map<Vec>> z_u;
         piqp::optional<Eigen::Map<Vec>> z_bl;
         piqp::optional<Eigen::Map<Vec>> z_bu;
+        if (!mxIsEmpty(y_ptr)) { y = Eigen::Map<Vec>(mxGetPr(y_ptr), (int) mxGetM(y_ptr)); }
         if (!mxIsEmpty(z_l_ptr)) { z_l = Eigen::Map<Vec>(mxGetPr(z_l_ptr), (int) mxGetM(z_l_ptr)); }
         if (!mxIsEmpty(z_u_ptr)) { z_u = Eigen::Map<Vec>(mxGetPr(z_u_ptr), (int) mxGetM(z_u_ptr)); }
         if (!mxIsEmpty(z_bl_ptr)) { z_bl = Eigen::Map<Vec>(mxGetPr(z_bl_ptr), (int) mxGetM(z_bl_ptr)); }

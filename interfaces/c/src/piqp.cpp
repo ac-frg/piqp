@@ -381,7 +381,7 @@ void piqp_set_warm_start(piqp_workspace* workspace,
     piqp_int m = workspace->solver_info.m;
 
     Eigen::Map<CVec> x_(x, n);
-    Eigen::Map<CVec> y_(y, p);
+    piqp::optional<Eigen::Map<CVec>> y_ = piqp_optional_vec_map(y, p);
     piqp::optional<Eigen::Map<CVec>> z_l_ = piqp_optional_vec_map(z_l, m);
     piqp::optional<Eigen::Map<CVec>> z_u_ = piqp_optional_vec_map(z_u, m);
     piqp::optional<Eigen::Map<CVec>> z_bl_ = piqp_optional_vec_map(z_bl, n);
