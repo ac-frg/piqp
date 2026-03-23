@@ -100,6 +100,8 @@ PYBIND11_MODULE(PYTHON_MODULE_NAME, m) {
     py::class_<piqp::Settings<T>>(m, "Settings", py::module_local())
         .def_readwrite("rho_init", &piqp::Settings<T>::rho_init)
         .def_readwrite("delta_init", &piqp::Settings<T>::delta_init)
+        .def_readwrite("rho_eq_factor", &piqp::Settings<T>::rho_eq_factor)
+        .def_readwrite("delta_eq_factor", &piqp::Settings<T>::delta_eq_factor)
         .def_readwrite("eps_abs", &piqp::Settings<T>::eps_abs)
         .def_readwrite("eps_rel", &piqp::Settings<T>::eps_rel)
         .def_readwrite("check_duality_gap", &piqp::Settings<T>::check_duality_gap)

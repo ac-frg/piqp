@@ -28,6 +28,8 @@ using SparseSolver = piqp::SparseSolver<double, int>;
 
 const char* PIQP_SETTINGS_FIELDS[] = {"rho_init",
                                       "delta_init",
+                                      "rho_eq_factor",
+                                      "delta_eq_factor",
                                       "eps_abs",
                                       "eps_rel",
                                       "check_duality_gap",
@@ -186,6 +188,8 @@ mxArray* settings_to_mx_struct(const piqp::Settings<double>& settings)
 
     mxSetField(mx_ptr, 0, "rho_init", mxCreateDoubleScalar(settings.rho_init));
     mxSetField(mx_ptr, 0, "delta_init", mxCreateDoubleScalar(settings.delta_init));
+    mxSetField(mx_ptr, 0, "rho_eq_factor", mxCreateDoubleScalar(settings.rho_eq_factor));
+    mxSetField(mx_ptr, 0, "delta_eq_factor", mxCreateDoubleScalar(settings.delta_eq_factor));
     mxSetField(mx_ptr, 0, "eps_abs", mxCreateDoubleScalar(settings.eps_abs));
     mxSetField(mx_ptr, 0, "eps_rel", mxCreateDoubleScalar(settings.eps_rel));
     mxSetField(mx_ptr, 0, "check_duality_gap", mxCreateDoubleScalar(settings.check_duality_gap));
@@ -224,6 +228,8 @@ void copy_mx_struct_to_settings(const mxArray* mx_ptr, piqp::Settings<double>& s
 {
     settings.rho_init = (double) mxGetScalar(mxGetField(mx_ptr, 0, "rho_init"));
     settings.delta_init = (double) mxGetScalar(mxGetField(mx_ptr, 0, "delta_init"));
+    settings.rho_eq_factor = (double) mxGetScalar(mxGetField(mx_ptr, 0, "rho_eq_factor"));
+    settings.delta_eq_factor = (double) mxGetScalar(mxGetField(mx_ptr, 0, "delta_eq_factor"));
     settings.eps_abs = (double) mxGetScalar(mxGetField(mx_ptr, 0, "eps_abs"));
     settings.eps_rel = (double) mxGetScalar(mxGetField(mx_ptr, 0, "eps_rel"));
     settings.check_duality_gap = (bool) mxGetScalar(mxGetField(mx_ptr, 0, "check_duality_gap"));

@@ -75,6 +75,8 @@ typedef enum {
 typedef struct {
     piqp_float       rho_init;
     piqp_float       delta_init;
+    piqp_float       rho_eq_factor;
+    piqp_float       delta_eq_factor;
     piqp_float       eps_abs;
     piqp_float       eps_rel;
     piqp_int        check_duality_gap;

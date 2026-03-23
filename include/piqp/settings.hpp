@@ -44,6 +44,9 @@ struct Settings
 {
     T rho_init = 1e-6;
     T delta_init = 1e-4;
+    
+    T rho_eq_factor = 1e-3;
+    T delta_eq_factor = 1e-3;
 
     T eps_abs = 1e-8;
     T eps_rel = 1e-9;
@@ -91,6 +94,8 @@ struct Settings
     {
         return rho_init > 0 &&
                delta_init > 0 &&
+               rho_eq_factor > 0 &&
+               delta_eq_factor > 0 &&
                eps_abs > 0 &&
                eps_rel >= 0 &&
                eps_duality_gap_abs > 0 &&
