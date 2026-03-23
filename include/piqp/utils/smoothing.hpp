@@ -13,21 +13,23 @@
 namespace piqp
 {
 
-// Smoothing operator for the nonnegative orthant.
-// Given input c and barrier parameter mu > 0, computes
-//   s = (c + sqrt(c^2 + 4*mu)) / 2
-// which satisfies s > 0 and s * (s - c) = mu.
-// This places the pair (s, z) with z = s - c exactly
-// on the central path with s * z = mu.
-//
-// Reference: Chen, Goulart, Jones,
-// "A warmstarting technique for general conic optimization
-//  in interior point methods", 2025.
+// Smoothing operator for the nonnegative orthant with log-barrier, including Moreau decomposition.
 template<typename T>
-void nonneg_smoothing(T c, T mu, T& s, T& z)
+void nonneg_smoothing(T sigma, T mu, T c, T& s, T& z)
 {
-    s = (c + std::sqrt(c * c + T(4) * mu)) / T(2);
-    z = s - c;
+    if (mu <= T(0)) {
+        // Standard projection onto nonneg orthant
+        s = (c > T(0)) ? c : T(0);
+    } else {
+        // Smoothing operator
+        const T sigma_c = sigma * c;
+        const T disc = sigma_c * sigma_c + T(4) * sigma * mu; // >= 0 always
+        s = (sigma_c + std::sqrt(disc)) / (T(2) * sigma);
+    }
+
+    // Moreau decomposition
+    // Satisfies z >= 0 and s*z = mu (approximate complementarity)
+    z = sigma * (s - c);
 }
 
 } // namespace piqp

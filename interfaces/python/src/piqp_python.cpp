@@ -124,6 +124,9 @@ PYBIND11_MODULE(PYTHON_MODULE_NAME, m) {
         .def_readwrite("iterative_refinement_min_improvement_rate", &piqp::Settings<T>::iterative_refinement_min_improvement_rate)
         .def_readwrite("iterative_refinement_static_regularization_eps", &piqp::Settings<T>::iterative_refinement_static_regularization_eps)
         .def_readwrite("iterative_refinement_static_regularization_rel", &piqp::Settings<T>::iterative_refinement_static_regularization_rel)
+        .def_readwrite("cold_start_alpha", &piqp::Settings<T>::cold_start_alpha)
+        .def_readwrite("cold_start_sigma", &piqp::Settings<T>::cold_start_sigma)
+        .def_readwrite("warm_start_sigma", &piqp::Settings<T>::warm_start_sigma)
         .def_readwrite("warm_start", &piqp::Settings<T>::warm_start)
         .def_readwrite("verbose", &piqp::Settings<T>::verbose)
         .def_readwrite("compute_timings", &piqp::Settings<T>::compute_timings);

@@ -151,6 +151,9 @@ class Settings:
     reg_lower_limit: float
     rho_init: float
     tau: float
+    cold_start_alpha: float
+    cold_start_sigma: float
+    warm_start_sigma: float
     warm_start: bool
     verbose: bool
 class SparseSolver:
