@@ -123,6 +123,9 @@ octave_value settings_to_ov_struct(const piqp::Settings<double>& settings)
     ov_struct.assign("iterative_refinement_min_improvement_rate", octave_value(settings.iterative_refinement_min_improvement_rate));
     ov_struct.assign("iterative_refinement_static_regularization_eps", octave_value(settings.iterative_refinement_static_regularization_eps));
     ov_struct.assign("iterative_refinement_static_regularization_rel", octave_value(settings.iterative_refinement_static_regularization_rel));
+    ov_struct.assign("cold_start_alpha", octave_value(settings.cold_start_alpha));
+    ov_struct.assign("cold_start_sigma", octave_value(settings.cold_start_sigma));
+    ov_struct.assign("warm_start_sigma", octave_value(settings.warm_start_sigma));
     ov_struct.assign("warm_start", octave_value(settings.warm_start));
     ov_struct.assign("verbose", octave_value(settings.verbose));
     ov_struct.assign("compute_timings", octave_value(settings.compute_timings));
@@ -158,6 +161,9 @@ void copy_ov_struct_to_settings(const octave_scalar_map& ov_struct, piqp::Settin
     settings.iterative_refinement_min_improvement_rate = ov_struct.getfield("iterative_refinement_min_improvement_rate").double_value();
     settings.iterative_refinement_static_regularization_eps = ov_struct.getfield("iterative_refinement_static_regularization_eps").double_value();
     settings.iterative_refinement_static_regularization_rel = ov_struct.getfield("iterative_refinement_static_regularization_rel").double_value();
+    settings.cold_start_alpha = ov_struct.getfield("cold_start_alpha").double_value();
+    settings.cold_start_sigma = ov_struct.getfield("cold_start_sigma").double_value();
+    settings.warm_start_sigma = ov_struct.getfield("warm_start_sigma").double_value();
     settings.warm_start = ov_struct.getfield("warm_start").bool_value();
     settings.verbose = ov_struct.getfield("verbose").bool_value();
     settings.compute_timings = ov_struct.getfield("compute_timings").bool_value();

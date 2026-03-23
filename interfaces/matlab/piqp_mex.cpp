@@ -52,6 +52,9 @@ const char* PIQP_SETTINGS_FIELDS[] = {"rho_init",
                                       "iterative_refinement_min_improvement_rate",
                                       "iterative_refinement_static_regularization_eps",
                                       "iterative_refinement_static_regularization_rel",
+                                      "cold_start_alpha",
+                                      "cold_start_sigma",
+                                      "warm_start_sigma",
                                       "warm_start",
                                       "verbose",
                                       "compute_timings"};
@@ -207,6 +210,9 @@ mxArray* settings_to_mx_struct(const piqp::Settings<double>& settings)
     mxSetField(mx_ptr, 0, "iterative_refinement_min_improvement_rate", mxCreateDoubleScalar(settings.iterative_refinement_min_improvement_rate));
     mxSetField(mx_ptr, 0, "iterative_refinement_static_regularization_eps", mxCreateDoubleScalar(settings.iterative_refinement_static_regularization_eps));
     mxSetField(mx_ptr, 0, "iterative_refinement_static_regularization_rel", mxCreateDoubleScalar(settings.iterative_refinement_static_regularization_rel));
+    mxSetField(mx_ptr, 0, "cold_start_alpha", mxCreateDoubleScalar(settings.cold_start_alpha));
+    mxSetField(mx_ptr, 0, "cold_start_sigma", mxCreateDoubleScalar(settings.cold_start_sigma));
+    mxSetField(mx_ptr, 0, "warm_start_sigma", mxCreateDoubleScalar(settings.warm_start_sigma));
     mxSetField(mx_ptr, 0, "warm_start", mxCreateDoubleScalar(settings.warm_start));
     mxSetField(mx_ptr, 0, "verbose", mxCreateDoubleScalar(settings.verbose));
     mxSetField(mx_ptr, 0, "compute_timings", mxCreateDoubleScalar(settings.compute_timings));
@@ -244,6 +250,9 @@ void copy_mx_struct_to_settings(const mxArray* mx_ptr, piqp::Settings<double>& s
     settings.iterative_refinement_min_improvement_rate = (double) mxGetScalar(mxGetField(mx_ptr, 0, "iterative_refinement_min_improvement_rate"));
     settings.iterative_refinement_static_regularization_eps = (double) mxGetScalar(mxGetField(mx_ptr, 0, "iterative_refinement_static_regularization_eps"));
     settings.iterative_refinement_static_regularization_rel = (double) mxGetScalar(mxGetField(mx_ptr, 0, "iterative_refinement_static_regularization_rel"));
+    settings.cold_start_alpha = (double) mxGetScalar(mxGetField(mx_ptr, 0, "cold_start_alpha"));
+    settings.cold_start_sigma = (double) mxGetScalar(mxGetField(mx_ptr, 0, "cold_start_sigma"));
+    settings.warm_start_sigma = (double) mxGetScalar(mxGetField(mx_ptr, 0, "warm_start_sigma"));
     settings.warm_start = (bool) mxGetScalar(mxGetField(mx_ptr, 0, "warm_start"));
     settings.verbose = (bool) mxGetScalar(mxGetField(mx_ptr, 0, "verbose"));
     settings.compute_timings = (bool) mxGetScalar(mxGetField(mx_ptr, 0, "compute_timings"));

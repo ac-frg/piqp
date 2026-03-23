@@ -148,6 +148,9 @@ static void piqp_set_default_settings(piqp_settings* settings, Solver&& solver)
     settings->iterative_refinement_min_improvement_rate = solver.settings().iterative_refinement_min_improvement_rate;
     settings->iterative_refinement_static_regularization_eps = solver.settings().iterative_refinement_static_regularization_eps;
     settings->iterative_refinement_static_regularization_rel = solver.settings().iterative_refinement_static_regularization_rel;
+    settings->cold_start_alpha = solver.settings().cold_start_alpha;
+    settings->cold_start_sigma = solver.settings().cold_start_sigma;
+    settings->warm_start_sigma = solver.settings().warm_start_sigma;
     settings->warm_start = solver.settings().warm_start;
     settings->verbose = solver.settings().verbose;
     settings->compute_timings = solver.settings().compute_timings;
@@ -291,6 +294,9 @@ void piqp_update_settings(piqp_workspace* workspace, const piqp_settings* settin
         solver->settings().iterative_refinement_min_improvement_rate = settings->iterative_refinement_min_improvement_rate;
         solver->settings().iterative_refinement_static_regularization_eps = settings->iterative_refinement_static_regularization_eps;
         solver->settings().iterative_refinement_static_regularization_rel = settings->iterative_refinement_static_regularization_rel;
+        solver->settings().cold_start_alpha = settings->cold_start_alpha;
+        solver->settings().cold_start_sigma = settings->cold_start_sigma;
+        solver->settings().warm_start_sigma = settings->warm_start_sigma;
         solver->settings().warm_start = settings->warm_start;
         solver->settings().verbose = settings->verbose;
         solver->settings().compute_timings = settings->compute_timings;
@@ -325,6 +331,9 @@ void piqp_update_settings(piqp_workspace* workspace, const piqp_settings* settin
         solver->settings().iterative_refinement_min_improvement_rate = settings->iterative_refinement_min_improvement_rate;
         solver->settings().iterative_refinement_static_regularization_eps = settings->iterative_refinement_static_regularization_eps;
         solver->settings().iterative_refinement_static_regularization_rel = settings->iterative_refinement_static_regularization_rel;
+        solver->settings().cold_start_alpha = settings->cold_start_alpha;
+        solver->settings().cold_start_sigma = settings->cold_start_sigma;
+        solver->settings().warm_start_sigma = settings->warm_start_sigma;
         solver->settings().warm_start = settings->warm_start;
         solver->settings().verbose = settings->verbose;
         solver->settings().compute_timings = settings->compute_timings;

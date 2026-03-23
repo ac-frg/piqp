@@ -55,6 +55,7 @@ protected:
     bool m_first_run = true;
     bool m_setup_done = false;
     bool m_enable_iterative_refinement = false;
+    bool m_warm_start_has_y = false;
     bool m_warm_start_has_z = false;
     bool m_warm_start_from_solve = false;
 
@@ -130,15 +131,21 @@ protected:
 
     T dual_prox_inf();
 
-    Status cold_start_init();
+    T init_compute_mu();
 
-    T cold_start_compute_mu();
+    void apply_smoothing(T sigma, T mu, const Variables<T>& s_kp1, const Variables<T>& z_k);
 
-    void apply_smoothing(T mu);
+    Status init_cold_start();
 
-    Status warm_start_init();
+    Status init_warm_start();
+
+    Status init_from_guess(T sigma);
+
+    void scale_results();
 
     void unscale_results();
+
+    void pack_dual();
 
     void restore_dual();
 };
