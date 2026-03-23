@@ -99,6 +99,8 @@ octave_value settings_to_ov_struct(const piqp::Settings<double>& settings)
 
     ov_struct.assign("rho_init", octave_value(settings.rho_init));
     ov_struct.assign("delta_init", octave_value(settings.delta_init));
+    ov_struct.assign("rho_eq_factor", octave_value(settings.rho_eq_factor));
+    ov_struct.assign("delta_eq_factor", octave_value(settings.delta_eq_factor));
     ov_struct.assign("eps_abs", octave_value(settings.eps_abs));
     ov_struct.assign("eps_rel", octave_value(settings.eps_rel));
     ov_struct.assign("check_duality_gap", octave_value(settings.check_duality_gap));
@@ -137,6 +139,8 @@ void copy_ov_struct_to_settings(const octave_scalar_map& ov_struct, piqp::Settin
 {
     settings.rho_init = ov_struct.getfield("rho_init").double_value();
     settings.delta_init = ov_struct.getfield("delta_init").double_value();
+    settings.rho_eq_factor = ov_struct.getfield("rho_eq_factor").double_value();
+    settings.delta_eq_factor = ov_struct.getfield("delta_eq_factor").double_value();
     settings.eps_abs = ov_struct.getfield("eps_abs").double_value();
     settings.eps_rel = ov_struct.getfield("eps_rel").double_value();
     settings.check_duality_gap = ov_struct.getfield("check_duality_gap").bool_value();

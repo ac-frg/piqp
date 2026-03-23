@@ -478,6 +478,13 @@ Status SolverBase<T, I, Preconditioner, MatrixType>::solve_impl()
     m_result.info.rho = m_settings.rho_init;
     m_result.info.delta = m_settings.delta_init;
 
+    // For equality-only problems, scale rho and delta down
+    if (m_data.m + m_data.n_x_l + m_data.n_x_u == 0)
+    {
+        m_result.info.rho = (std::max)(m_settings.rho_init * m_settings.rho_eq_factor, m_settings.reg_lower_limit);
+        m_result.info.delta = (std::max)(m_settings.delta_init * m_settings.delta_eq_factor, m_settings.reg_lower_limit);
+    }
+
     m_enable_iterative_refinement = m_settings.iterative_refinement_always_enabled;
 
     if (use_warm_start)

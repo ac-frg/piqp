@@ -124,6 +124,8 @@ static void piqp_set_default_settings(piqp_settings* settings, Solver&& solver)
 {
     settings->rho_init = solver.settings().rho_init;
     settings->delta_init = solver.settings().delta_init;
+    settings->rho_eq_factor = solver.settings().rho_eq_factor;
+    settings->delta_eq_factor = solver.settings().delta_eq_factor;
     settings->eps_abs = solver.settings().eps_abs;
     settings->eps_rel = solver.settings().eps_rel;
     settings->check_duality_gap = solver.settings().check_duality_gap;
@@ -270,6 +272,8 @@ void piqp_update_settings(piqp_workspace* workspace, const piqp_settings* settin
 
         solver->settings().rho_init = settings->rho_init;
         solver->settings().delta_init = settings->delta_init;
+        solver->settings().rho_eq_factor = settings->rho_eq_factor;
+        solver->settings().delta_eq_factor = settings->delta_eq_factor;
         solver->settings().eps_abs = settings->eps_abs;
         solver->settings().eps_rel = settings->eps_rel;
         solver->settings().check_duality_gap = settings->check_duality_gap;
@@ -307,6 +311,8 @@ void piqp_update_settings(piqp_workspace* workspace, const piqp_settings* settin
 
         solver->settings().rho_init = settings->rho_init;
         solver->settings().delta_init = settings->delta_init;
+        solver->settings().rho_eq_factor = settings->rho_eq_factor;
+        solver->settings().delta_eq_factor = settings->delta_eq_factor;
         solver->settings().eps_abs = settings->eps_abs;
         solver->settings().eps_rel = settings->eps_rel;
         solver->settings().check_duality_gap = settings->check_duality_gap;

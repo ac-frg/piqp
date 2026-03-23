@@ -126,6 +126,7 @@ class Result:
 class Settings:
     check_duality_gap: bool
     compute_timings: bool
+    delta_eq_factor: float
     delta_init: float
     eps_abs: float
     eps_duality_gap_abs: float
@@ -149,6 +150,7 @@ class Settings:
     reg_finetune_lower_limit: float
     reg_finetune_primal_update_threshold: int
     reg_lower_limit: float
+    rho_eq_factor: float
     rho_init: float
     tau: float
     cold_start_alpha: float
