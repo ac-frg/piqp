@@ -43,7 +43,7 @@ template<typename T>
 struct Settings
 {
     T rho_init = 1e-6;
-    T delta_init = 1e-4;
+    T delta_init = 1e-6;
     
     T rho_eq_factor = 1e-3;
     T delta_eq_factor = 1e-3;
@@ -82,9 +82,9 @@ struct Settings
     T iterative_refinement_static_regularization_rel = std::numeric_limits<T>::epsilon() * std::numeric_limits<T>::epsilon();
 
     isize max_init_admm_iter = 5;
-    T init_mu_scale = 1.0;
-    T cold_start_alpha = 1.0;
-    T cold_start_sigma = 1.0;
+    T init_mu_scale = 0.05;
+    T cold_start_alpha = 0.7;
+    T cold_start_sigma = 3.0;
     T warm_start_sigma = 100.0;
 
     bool warm_start = false;

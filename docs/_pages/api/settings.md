@@ -10,7 +10,7 @@ All interfaces have the same internal solver settings. Note that the default set
 | Argument                                         | Default Value                      | Description                                                                                                                         |
 |:-------------------------------------------------|:-----------------------------------|:------------------------------------------------------------------------------------------------------------------------------------|
 | `rho_init`                                       | `1e-6`                             | Initial value for the primal proximal penalty parameter rho.                                                                        |
-| `delta_init`                                     | `1e-4`                             | Initial value for the augmented lagrangian penalty parameter delta.                                                                 |
+| `delta_init`                                     | `1e-6`                             | Initial value for the augmented lagrangian penalty parameter delta.                                                                 |
 | `rho_eq_factor`                                  | `1e-3`                             | Multiplicative factor applied to `rho_init` for equality-only problems (no inequality or bound constraints).                        |
 | `delta_eq_factor`                                | `1e-3`                             | Multiplicative factor applied to `delta_init` for equality-only problems (no inequality or bound constraints).                      |
 | `eps_abs`                                        | `1e-8`                             | Absolute tolerance.                                                                                                                 |
@@ -37,8 +37,10 @@ All interfaces have the same internal solver settings. Note that the default set
 | `iterative_refinement_min_improvement_rate`      | `5.0`                              | Minimum improvement rate for iterative refinement.                                                                                  |
 | `iterative_refinement_static_regularization_eps` | `1e-8`                             | Static regularization for KKT system for iterative refinement.                                                                      |
 | `iterative_refinement_static_regularization_rel` | `eps^2`                            | Static regularization w.r.t. the maximum abs diagonal term of KKT system.                                                           |
-| `cold_start_alpha`                               | `1.0`                              | Scaling factor for the initial primal guess in cold start.                                                                          |
-| `cold_start_sigma`                               | `1.0`                              | Slack penalty parameter (sigma) used during cold start initialization.                                                              |
+| `max_init_admm_iter`                             | `5`                                | Maximum number of ADMM iterations during initialization.                                                                            |
+| `init_mu_scale`                                  | `0.05`                             | Scaling factor for the initial barrier parameter mu.                                                                                |
+| `cold_start_alpha`                               | `0.7`                              | Scaling factor for the initial primal guess in cold start.                                                                          |
+| `cold_start_sigma`                               | `3.0`                              | Slack penalty parameter (sigma) used during cold start initialization.                                                              |
 | `warm_start_sigma`                               | `100.0`                            | Slack penalty parameter (sigma) used during warm start initialization.                                                              |
 | `warm_start`                                     | `false`                            | Warm start the solver from the previous solution on update and re-solve. See [Warm Starting](#warm-starting).                       |
 | `verbose`                                        | `false`                            | Verbose printing.                                                                                                                   |
@@ -58,4 +60,4 @@ When `warm_start` is set to `true`, the solver automatically uses the solution f
 
 All interfaces provide a `set_warm_start` method that allows you to manually specify the warm start point. This is useful when you have an approximate solution from an external source.
 
-The method takes the primal variable `x` and the equality dual variable `y` as required arguments. The inequality dual variables `z_l`, `z_u`, `z_bl`, `z_bu` are optional — if not provided, they default to zero and the solver computes the slack variables from `x`.
+The method takes the primal variable `x` as a required argument. The dual variables `y`, `z_l`, `z_u`, `z_bl`, `z_bu` are all optional — if not provided, they default to zero and the solver computes the slack variables from `x`.
