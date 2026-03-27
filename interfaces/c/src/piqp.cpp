@@ -85,6 +85,7 @@ static void piqp_update_result(piqp_result* result, const piqp::Result<piqp_floa
 
     result->info.status = (piqp_status) solver_result.info.status;
     result->info.iter = (piqp_int) solver_result.info.iter;
+    result->info.init_admm_iter = (piqp_int) solver_result.info.init_admm_iter;
     result->info.rho = solver_result.info.rho;
     result->info.delta = solver_result.info.delta;
     result->info.mu = solver_result.info.mu;
@@ -150,6 +151,8 @@ static void piqp_set_default_settings(piqp_settings* settings, Solver&& solver)
     settings->iterative_refinement_min_improvement_rate = solver.settings().iterative_refinement_min_improvement_rate;
     settings->iterative_refinement_static_regularization_eps = solver.settings().iterative_refinement_static_regularization_eps;
     settings->iterative_refinement_static_regularization_rel = solver.settings().iterative_refinement_static_regularization_rel;
+    settings->max_init_admm_iter = solver.settings().max_init_admm_iter;
+    settings->init_mu_scale = solver.settings().init_mu_scale;
     settings->cold_start_alpha = solver.settings().cold_start_alpha;
     settings->cold_start_sigma = solver.settings().cold_start_sigma;
     settings->warm_start_sigma = solver.settings().warm_start_sigma;
@@ -298,6 +301,8 @@ void piqp_update_settings(piqp_workspace* workspace, const piqp_settings* settin
         solver->settings().iterative_refinement_min_improvement_rate = settings->iterative_refinement_min_improvement_rate;
         solver->settings().iterative_refinement_static_regularization_eps = settings->iterative_refinement_static_regularization_eps;
         solver->settings().iterative_refinement_static_regularization_rel = settings->iterative_refinement_static_regularization_rel;
+        solver->settings().max_init_admm_iter = settings->max_init_admm_iter;
+        solver->settings().init_mu_scale = settings->init_mu_scale;
         solver->settings().cold_start_alpha = settings->cold_start_alpha;
         solver->settings().cold_start_sigma = settings->cold_start_sigma;
         solver->settings().warm_start_sigma = settings->warm_start_sigma;
@@ -337,6 +342,8 @@ void piqp_update_settings(piqp_workspace* workspace, const piqp_settings* settin
         solver->settings().iterative_refinement_min_improvement_rate = settings->iterative_refinement_min_improvement_rate;
         solver->settings().iterative_refinement_static_regularization_eps = settings->iterative_refinement_static_regularization_eps;
         solver->settings().iterative_refinement_static_regularization_rel = settings->iterative_refinement_static_regularization_rel;
+        solver->settings().max_init_admm_iter = settings->max_init_admm_iter;
+        solver->settings().init_mu_scale = settings->init_mu_scale;
         solver->settings().cold_start_alpha = settings->cold_start_alpha;
         solver->settings().cold_start_sigma = settings->cold_start_sigma;
         solver->settings().warm_start_sigma = settings->warm_start_sigma;
