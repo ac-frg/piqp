@@ -81,6 +81,8 @@ struct Settings
     T iterative_refinement_static_regularization_eps = 1e-8;
     T iterative_refinement_static_regularization_rel = std::numeric_limits<T>::epsilon() * std::numeric_limits<T>::epsilon();
 
+    isize max_init_admm_iter = 5;
+    T init_mu_scale = 1.0;
     T cold_start_alpha = 1.0;
     T cold_start_sigma = 1.0;
     T warm_start_sigma = 100.0;
@@ -114,6 +116,8 @@ struct Settings
                iterative_refinement_min_improvement_rate >= 1.0 &&
                iterative_refinement_static_regularization_eps > 0 &&
                iterative_refinement_static_regularization_rel >= 0 &&
+               max_init_admm_iter > 0 &&
+               init_mu_scale > 0 &&
                cold_start_alpha >= 0 &&
                cold_start_sigma > 0 &&
                warm_start_sigma > 0;

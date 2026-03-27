@@ -111,7 +111,7 @@ Status SolverBase<T, I, Preconditioner, MatrixType>::solve()
         piqp_print("----------------------------------------------------------\n");
         piqp_print("                        PIQP v0.6.2                       \n");
         piqp_print("                    (c) Roland Schwan                     \n");
-        piqp_print("   Ecole Polytechnique Federale de Lausanne (EPFL) 2025   \n");
+        piqp_print("   Ecole Polytechnique Federale de Lausanne (EPFL) 2026   \n");
         piqp_print("----------------------------------------------------------\n");
         if (MatrixType == PIQP_DENSE)
         {
@@ -468,6 +468,7 @@ Status SolverBase<T, I, Preconditioner, MatrixType>::solve_impl()
 
     m_result.info.status = Status::PIQP_UNSOLVED;
     m_result.info.iter = 0;
+    m_result.info.init_admm_iter = 0;
     m_result.info.reg_limit = m_settings.reg_lower_limit;
     m_result.info.factor_retires = 0;
     m_result.info.no_primal_update = 0;
@@ -532,20 +533,40 @@ Status SolverBase<T, I, Preconditioner, MatrixType>::solve_impl()
 
         if (m_settings.verbose)
         {
-            piqp_print("%3zd   % .5e   % .5e   %.5e   %.5e   %.5e   %.3e   %.3e   %.3e   %.4f   %.4f\n",
-                m_result.info.iter,
-                static_cast<double>(m_result.info.primal_obj),
-                static_cast<double>(m_result.info.dual_obj),
-                static_cast<double>(m_result.info.duality_gap),
-                static_cast<double>(m_result.info.primal_res),
-                static_cast<double>(m_result.info.dual_res),
-                static_cast<double>(m_result.info.rho),
-                static_cast<double>(m_result.info.delta),
-                static_cast<double>(m_result.info.mu),
-                static_cast<double>(m_result.info.primal_step),
-                static_cast<double>(m_result.info.dual_step)
-            );
-            fflush(stdout);
+            if (m_result.info.iter == 0)
+            {
+                piqp_print("%2zd|0  % .5e   % .5e   %.5e   %.5e   %.5e   %.3e   %.3e   %.3e   %.4f   %.4f\n",
+                    m_result.info.init_admm_iter,
+                    static_cast<double>(m_result.info.primal_obj),
+                    static_cast<double>(m_result.info.dual_obj),
+                    static_cast<double>(m_result.info.duality_gap),
+                    static_cast<double>(m_result.info.primal_res),
+                    static_cast<double>(m_result.info.dual_res),
+                    static_cast<double>(m_result.info.rho),
+                    static_cast<double>(m_result.info.delta),
+                    static_cast<double>(m_result.info.mu),
+                    static_cast<double>(m_result.info.primal_step),
+                    static_cast<double>(m_result.info.dual_step)
+                );
+                fflush(stdout);
+            }
+            else
+            {
+                piqp_print("%4zd  % .5e   % .5e   %.5e   %.5e   %.5e   %.3e   %.3e   %.3e   %.4f   %.4f\n",
+                    m_result.info.iter,
+                    static_cast<double>(m_result.info.primal_obj),
+                    static_cast<double>(m_result.info.dual_obj),
+                    static_cast<double>(m_result.info.duality_gap),
+                    static_cast<double>(m_result.info.primal_res),
+                    static_cast<double>(m_result.info.dual_res),
+                    static_cast<double>(m_result.info.rho),
+                    static_cast<double>(m_result.info.delta),
+                    static_cast<double>(m_result.info.mu),
+                    static_cast<double>(m_result.info.primal_step),
+                    static_cast<double>(m_result.info.dual_step)
+                );
+                fflush(stdout);
+            }
         }
 
         if ((m_result.info.primal_res < m_settings.eps_abs || m_result.info.primal_res_rel < m_settings.eps_rel) &&
@@ -1395,53 +1416,118 @@ Status SolverBase<T, I, Preconditioner, MatrixType>::init_from_guess(T sigma)
         m_result.info.kkt_factor_time += kkt_factor_time;
     }
 
-    // Store previous z duals temporarily in step (used by apply_smoothing)
-    step.z_l = m_result.z_l;
-    step.z_u = m_result.z_u;
-    step.z_bl = m_result.z_bl;
-    step.z_bu = m_result.z_bu;
+    // Initialize nu^0 = z^0
+    prox_vars.z_l = m_result.z_l;
+    prox_vars.z_u = m_result.z_u;
+    prox_vars.z_bl = m_result.z_bl;
+    prox_vars.z_bu = m_result.z_bu;
 
-    // Build RHS
-    res.x = -m_data.c + m_result.info.rho * m_result.x;
-    res.y = m_data.b - m_result.info.delta * m_result.y;
+    T mu = T(0);
+    m_result.info.init_admm_iter = 0;
 
-    res.z_l.setZero();
-    res.z_u.setZero();
-    for (isize i = 0; i < m_data.n_h_l; i++)
+    for (isize admm_iter = 0; admm_iter < m_settings.max_init_admm_iter; admm_iter++)
     {
-        Eigen::Index idx = m_data.h_l_idx(i);
-        res.z_l(idx) = -m_data.h_l(idx) - m_result.info.delta * m_result.z_l(idx);
-    }
-    for (isize i = 0; i < m_data.n_h_u; i++)
-    {
-        Eigen::Index idx = m_data.h_u_idx(i);
-        res.z_u(idx) = m_data.h_u(idx) - m_result.info.delta * m_result.z_u(idx);
-    }
-    res.z_bl.head(m_data.n_x_l) = -m_data.x_l.head(m_data.n_x_l) - m_result.info.delta * m_result.z_bl.head(m_data.n_x_l);
-    res.z_bu.head(m_data.n_x_u) = m_data.x_u.head(m_data.n_x_u) - m_result.info.delta * m_result.z_bu.head(m_data.n_x_u);
+        m_result.info.init_admm_iter++;
 
-    res.s_l = sigma * m_result.s_l + m_result.z_l;
-    res.s_u = sigma * m_result.s_u + m_result.z_u;
-    res.s_bl = sigma * m_result.s_bl + m_result.z_bl;
-    res.s_bu = sigma * m_result.s_bu + m_result.z_bu;
+        // At this point:
+        //   m_result.{x, y}  = x^k, y^k
+        //   m_result.s_*     = s_tilde^k
+        //   m_result.z_*     = z^k (ADMM consensus dual)
+        //   prox_vars.z_*    = nu^k (augmented Lagrangian dual)
 
-    // Solve KKT system
-    if (m_settings.compute_timings)
-    {
-        timer.start();
-    }
-    m_kkt_system.solve(m_data, m_settings, res, m_result);
-    if (m_settings.compute_timings)
-    {
-        T kkt_solve_time = timer.stop();
-        m_result.info.kkt_solve_time += kkt_solve_time;
-    }
+        // Save z^k into step.z_* for apply_smoothing later
+        step.z_l = m_result.z_l;
+        step.z_u = m_result.z_u;
+        step.z_bl = m_result.z_bl;
+        step.z_bu = m_result.z_bu;
 
-    if (m_data.m + m_data.n_x_l + m_data.n_x_u > 0)
-    {
-        T mu = init_compute_mu();
-        apply_smoothing(sigma, mu, m_result, step);
-        m_result.info.mu = calculate_mu();
+        // Build RHS
+        res.x = -m_data.c + m_result.info.rho * m_result.x;
+        res.y = m_data.b - m_result.info.delta * m_result.y;
+
+        res.z_l.setZero();
+        res.z_u.setZero();
+        for (isize i = 0; i < m_data.n_h_l; i++)
+        {
+            Eigen::Index idx = m_data.h_l_idx(i);
+            res.z_l(idx) = -m_data.h_l(idx) - m_result.info.delta * prox_vars.z_l(idx);
+        }
+        for (isize i = 0; i < m_data.n_h_u; i++)
+        {
+            Eigen::Index idx = m_data.h_u_idx(i);
+            res.z_u(idx) = m_data.h_u(idx) - m_result.info.delta * prox_vars.z_u(idx);
+        }
+        res.z_bl.head(m_data.n_x_l) = -m_data.x_l.head(m_data.n_x_l) - m_result.info.delta * prox_vars.z_bl.head(m_data.n_x_l);
+        res.z_bu.head(m_data.n_x_u) = m_data.x_u.head(m_data.n_x_u) - m_result.info.delta * prox_vars.z_bu.head(m_data.n_x_u);
+
+        res.s_l = sigma * m_result.s_l + m_result.z_l;
+        res.s_u = sigma * m_result.s_u + m_result.z_u;
+        res.s_bl = sigma * m_result.s_bl + m_result.z_bl;
+        res.s_bu = sigma * m_result.s_bu + m_result.z_bu;
+
+        // Solve KKT system (reusing factorization)
+        if (m_settings.compute_timings)
+        {
+            timer.start();
+        }
+        m_kkt_system.solve(m_data, m_settings, res, m_result);
+        if (m_settings.compute_timings)
+        {
+            T kkt_solve_time = timer.stop();
+            m_result.info.kkt_solve_time += kkt_solve_time;
+        }
+
+        if (m_data.m + m_data.n_x_l + m_data.n_x_u > 0)
+        {
+            // Compute mu from the first iteration only (fixes the barrier scale)
+            if (admm_iter == 0)
+            {
+                mu = init_compute_mu() * m_settings.init_mu_scale;
+            }
+
+            // Save nu^{k+1} (in m_result.z_*) before smoothing overwrites it
+            prox_vars.z_l = m_result.z_l;
+            prox_vars.z_u = m_result.z_u;
+            prox_vars.z_bl = m_result.z_bl;
+            prox_vars.z_bu = m_result.z_bu;
+
+            apply_smoothing(sigma, mu, m_result, step);
+            m_result.info.mu = calculate_mu();
+
+            // Check ADMM consensus residual: ||r_c|| = ||z^{k+1} - z^k|| / sigma
+            if (admm_iter < m_settings.max_init_admm_iter - 1)
+            {
+                T consensus_res = T(0);
+                for (isize i = 0; i < m_data.n_h_l; i++)
+                {
+                    Eigen::Index idx = m_data.h_l_idx(i);
+                    consensus_res = (std::max)(consensus_res, std::abs(m_result.z_l(idx) - step.z_l(idx)));
+                }
+                for (isize i = 0; i < m_data.n_h_u; i++)
+                {
+                    Eigen::Index idx = m_data.h_u_idx(i);
+                    consensus_res = (std::max)(consensus_res, std::abs(m_result.z_u(idx) - step.z_u(idx)));
+                }
+                for (isize i = 0; i < m_data.n_x_l; i++)
+                {
+                    consensus_res = (std::max)(consensus_res, std::abs(m_result.z_bl(i) - step.z_bl(i)));
+                }
+                for (isize i = 0; i < m_data.n_x_u; i++)
+                {
+                    consensus_res = (std::max)(consensus_res, std::abs(m_result.z_bu(i) - step.z_bu(i)));
+                }
+                consensus_res /= sigma;
+
+                if (consensus_res <= mu)
+                {
+                    break;
+                }
+            }
+        }
+        else
+        {
+            break;
+        }
     }
 
     return Status::PIQP_UNSOLVED;

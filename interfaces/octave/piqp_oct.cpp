@@ -125,6 +125,8 @@ octave_value settings_to_ov_struct(const piqp::Settings<double>& settings)
     ov_struct.assign("iterative_refinement_min_improvement_rate", octave_value(settings.iterative_refinement_min_improvement_rate));
     ov_struct.assign("iterative_refinement_static_regularization_eps", octave_value(settings.iterative_refinement_static_regularization_eps));
     ov_struct.assign("iterative_refinement_static_regularization_rel", octave_value(settings.iterative_refinement_static_regularization_rel));
+    ov_struct.assign("max_init_admm_iter", octave_value(settings.max_init_admm_iter));
+    ov_struct.assign("init_mu_scale", octave_value(settings.init_mu_scale));
     ov_struct.assign("cold_start_alpha", octave_value(settings.cold_start_alpha));
     ov_struct.assign("cold_start_sigma", octave_value(settings.cold_start_sigma));
     ov_struct.assign("warm_start_sigma", octave_value(settings.warm_start_sigma));
@@ -165,6 +167,8 @@ void copy_ov_struct_to_settings(const octave_scalar_map& ov_struct, piqp::Settin
     settings.iterative_refinement_min_improvement_rate = ov_struct.getfield("iterative_refinement_min_improvement_rate").double_value();
     settings.iterative_refinement_static_regularization_eps = ov_struct.getfield("iterative_refinement_static_regularization_eps").double_value();
     settings.iterative_refinement_static_regularization_rel = ov_struct.getfield("iterative_refinement_static_regularization_rel").double_value();
+    settings.max_init_admm_iter = ov_struct.getfield("max_init_admm_iter").long_value();
+    settings.init_mu_scale = ov_struct.getfield("init_mu_scale").double_value();
     settings.cold_start_alpha = ov_struct.getfield("cold_start_alpha").double_value();
     settings.cold_start_sigma = ov_struct.getfield("cold_start_sigma").double_value();
     settings.warm_start_sigma = ov_struct.getfield("warm_start_sigma").double_value();
@@ -180,6 +184,7 @@ octave_value result_to_ov_struct(const piqp::Result<double>& result)
     ov_info_struct.assign("status", octave_value(piqp::status_to_string(result.info.status)));
     ov_info_struct.assign("status_val", octave_value(result.info.status));
     ov_info_struct.assign("iter", octave_value(result.info.iter));
+    ov_info_struct.assign("init_admm_iter", octave_value(result.info.init_admm_iter));
     ov_info_struct.assign("rho", octave_value(result.info.rho));
     ov_info_struct.assign("delta", octave_value(result.info.delta));
     ov_info_struct.assign("mu", octave_value(result.info.mu));

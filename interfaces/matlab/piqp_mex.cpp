@@ -54,6 +54,8 @@ const char* PIQP_SETTINGS_FIELDS[] = {"rho_init",
                                       "iterative_refinement_min_improvement_rate",
                                       "iterative_refinement_static_regularization_eps",
                                       "iterative_refinement_static_regularization_rel",
+                                      "max_init_admm_iter",
+                                      "init_mu_scale",
                                       "cold_start_alpha",
                                       "cold_start_sigma",
                                       "warm_start_sigma",
@@ -64,6 +66,7 @@ const char* PIQP_SETTINGS_FIELDS[] = {"rho_init",
 const char* PIQP_INFO_FIELDS[] = {"status",
                                   "status_val",
                                   "iter",
+                                  "init_admm_iter",
                                   "rho",
                                   "delta",
                                   "mu",
@@ -214,6 +217,8 @@ mxArray* settings_to_mx_struct(const piqp::Settings<double>& settings)
     mxSetField(mx_ptr, 0, "iterative_refinement_min_improvement_rate", mxCreateDoubleScalar(settings.iterative_refinement_min_improvement_rate));
     mxSetField(mx_ptr, 0, "iterative_refinement_static_regularization_eps", mxCreateDoubleScalar(settings.iterative_refinement_static_regularization_eps));
     mxSetField(mx_ptr, 0, "iterative_refinement_static_regularization_rel", mxCreateDoubleScalar(settings.iterative_refinement_static_regularization_rel));
+    mxSetField(mx_ptr, 0, "max_init_admm_iter", mxCreateDoubleScalar(settings.max_init_admm_iter));
+    mxSetField(mx_ptr, 0, "init_mu_scale", mxCreateDoubleScalar(settings.init_mu_scale));
     mxSetField(mx_ptr, 0, "cold_start_alpha", mxCreateDoubleScalar(settings.cold_start_alpha));
     mxSetField(mx_ptr, 0, "cold_start_sigma", mxCreateDoubleScalar(settings.cold_start_sigma));
     mxSetField(mx_ptr, 0, "warm_start_sigma", mxCreateDoubleScalar(settings.warm_start_sigma));
@@ -256,6 +261,8 @@ void copy_mx_struct_to_settings(const mxArray* mx_ptr, piqp::Settings<double>& s
     settings.iterative_refinement_min_improvement_rate = (double) mxGetScalar(mxGetField(mx_ptr, 0, "iterative_refinement_min_improvement_rate"));
     settings.iterative_refinement_static_regularization_eps = (double) mxGetScalar(mxGetField(mx_ptr, 0, "iterative_refinement_static_regularization_eps"));
     settings.iterative_refinement_static_regularization_rel = (double) mxGetScalar(mxGetField(mx_ptr, 0, "iterative_refinement_static_regularization_rel"));
+    settings.max_init_admm_iter = (piqp::isize) mxGetScalar(mxGetField(mx_ptr, 0, "max_init_admm_iter"));
+    settings.init_mu_scale = (double) mxGetScalar(mxGetField(mx_ptr, 0, "init_mu_scale"));
     settings.cold_start_alpha = (double) mxGetScalar(mxGetField(mx_ptr, 0, "cold_start_alpha"));
     settings.cold_start_sigma = (double) mxGetScalar(mxGetField(mx_ptr, 0, "cold_start_sigma"));
     settings.warm_start_sigma = (double) mxGetScalar(mxGetField(mx_ptr, 0, "warm_start_sigma"));
@@ -272,6 +279,7 @@ mxArray* result_to_mx_struct(const piqp::Result<double>& result)
     mxSetField(mx_info_ptr, 0, "status", mxCreateString(piqp::status_to_string(result.info.status)));
     mxSetField(mx_info_ptr, 0, "status_val", mxCreateDoubleScalar((double) result.info.status));
     mxSetField(mx_info_ptr, 0, "iter", mxCreateDoubleScalar((double) result.info.iter));
+    mxSetField(mx_info_ptr, 0, "init_admm_iter", mxCreateDoubleScalar((double) result.info.init_admm_iter));
     mxSetField(mx_info_ptr, 0, "rho", mxCreateDoubleScalar(result.info.rho));
     mxSetField(mx_info_ptr, 0, "delta", mxCreateDoubleScalar(result.info.delta));
     mxSetField(mx_info_ptr, 0, "mu", mxCreateDoubleScalar(result.info.mu));
