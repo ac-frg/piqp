@@ -13,6 +13,8 @@
 #ifndef PIQP_UTILS_EIGEN_MATIO_HPP
 #define PIQP_UTILS_EIGEN_MATIO_HPP
 
+#include <type_traits>
+
 #include "matio.h"
 #ifndef MATIO_VERSION
 #define MATIO_VERSION (MATIO_MAJOR_VERSION* 100 + MATIO_MINOR_VERSION* 10 + MATIO_RELEASE_LEVEL)
@@ -106,6 +108,11 @@ template <> struct type_matio<MAT_T_INT64>  { typedef int64_t  type; };
 template <> struct type_matio<MAT_T_UINT64> { typedef uint64_t type; };
 
 template <> struct class_matio<MAT_C_DOUBLE> { typedef double type; };
+
+template <typename T>
+auto to_signed_ptr(T* ptr) {
+    return reinterpret_cast<std::make_signed_t<T>*>(ptr);
+}
 
 } // Eigen::internal::
 
@@ -369,7 +376,8 @@ private:
             std::cout << "read_mat() wrong sparse format\n ";
             return -1;
         }
-        Map<SparseMatrix<data_t, ColMajor, typename std::remove_reference<decltype(*sparse->ir)>::type> > map(rows, cols, sparse->ndata, sparse->jc, sparse->ir, (data_t*) sparse->data);
+        using IndexType = std::make_signed_t<std::remove_reference_t<decltype(*sparse->ir)>>;
+        Map<SparseMatrix<data_t, ColMajor, IndexType> > map(rows, cols, sparse->ndata, internal::to_signed_ptr(sparse->jc), internal::to_signed_ptr(sparse->ir), (data_t*) sparse->data);
         matrix = map.template cast<Scalar>();
         return 0;
     }
@@ -390,7 +398,8 @@ private:
         Matrix<Scalar, Dynamic, 1> tmp(sparse->ndata);
         tmp.real() = map_re.template cast<Scalar>();
         tmp.imag() = map_im.template cast<Scalar>();
-        Map<SparseMatrix<Scalar, ColMajor, typename std::remove_reference<decltype(*sparse->ir)>::type> > map(rows, cols, sparse->ndata, sparse->jc, sparse->ir, tmp.data());
+        using IndexType = std::make_signed_t<std::remove_reference_t<decltype(*sparse->ir)>>;
+        Map<SparseMatrix<Scalar, ColMajor, IndexType> > map(rows, cols, sparse->ndata, internal::to_signed_ptr(sparse->jc), internal::to_signed_ptr(sparse->ir), tmp.data());
         matrix = map.template cast<Scalar>();
         return 0;
     }
