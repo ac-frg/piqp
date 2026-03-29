@@ -9,6 +9,7 @@
 #define PIQP_BLASFEO_WRAPPER
 
 #include <cstring>
+#include <cassert>
 
 #include "blasfeo.h"
 #include "piqp/utils/blasfeo_mat.hpp"

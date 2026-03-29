@@ -239,10 +239,10 @@ public:
       * This method is provided for compatibility with other matrix decompositions, thus enabling generic code such as:
       * \code x = decomposition.adjoint().solve(b) \endcode
       */
-    const LDLTNoPivot& adjoint() const EIGEN_NOEXCEPT { return *this; }
+    const LDLTNoPivot& adjoint() const noexcept { return *this; }
 
-    inline Eigen::Index rows() const EIGEN_NOEXCEPT { return m_matrix.rows(); }
-    inline Eigen::Index cols() const EIGEN_NOEXCEPT { return m_matrix.cols(); }
+    inline Eigen::Index rows() const noexcept { return m_matrix.rows(); }
+    inline Eigen::Index cols() const noexcept { return m_matrix.cols(); }
 
 #ifndef EIGEN_PARSED_BY_DOXYGEN
     template<typename RhsType, typename DstType>

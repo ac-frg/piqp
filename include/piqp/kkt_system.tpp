@@ -8,6 +8,8 @@
 #ifndef PIQP_KKT_SYSTEM_TPP
 #define PIQP_KKT_SYSTEM_TPP
 
+#include <cassert>
+
 #include "piqp/kkt_system.hpp"
 #include "piqp/dense/kkt.hpp"
 #include "piqp/sparse/kkt.hpp"
