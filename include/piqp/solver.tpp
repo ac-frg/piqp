@@ -1107,11 +1107,11 @@ T SolverBase<T, I, Preconditioner, MatrixType>::primal_res_nr()
     inf = (std::max)(inf, m_preconditioner.unscale_primal_res_ineq(res_nr.z_u).template lpNorm<Eigen::Infinity>());
     for (isize i = 0; i < m_data.n_x_l; i++)
     {
-        inf = (std::max)(inf, m_preconditioner.unscale_primal_res_b_i(res_nr.z_bl(i), m_data.x_l_idx(i)));
+        inf = (std::max)(inf, std::abs(m_preconditioner.unscale_primal_res_b_i(res_nr.z_bl(i), m_data.x_l_idx(i))));
     }
     for (isize i = 0; i < m_data.n_x_u; i++)
     {
-        inf = (std::max)(inf, m_preconditioner.unscale_primal_res_b_i(res_nr.z_bu(i), m_data.x_u_idx(i)));
+        inf = (std::max)(inf, std::abs(m_preconditioner.unscale_primal_res_b_i(res_nr.z_bu(i), m_data.x_u_idx(i))));
     }
     return inf;
 }
@@ -1126,11 +1126,11 @@ T SolverBase<T, I, Preconditioner, MatrixType>::primal_res_r()
     inf = (std::max)(inf, m_preconditioner.unscale_primal_res_ineq(res.z_u).template lpNorm<Eigen::Infinity>());
     for (isize i = 0; i < m_data.n_x_l; i++)
     {
-        inf = (std::max)(inf, m_preconditioner.unscale_primal_res_b_i(res.z_bl(i), m_data.x_l_idx(i)));
+        inf = (std::max)(inf, std::abs(m_preconditioner.unscale_primal_res_b_i(res.z_bl(i), m_data.x_l_idx(i))));
     }
     for (isize i = 0; i < m_data.n_x_u; i++)
     {
-        inf = (std::max)(inf, m_preconditioner.unscale_primal_res_b_i(res.z_bu(i), m_data.x_u_idx(i)));
+        inf = (std::max)(inf, std::abs(m_preconditioner.unscale_primal_res_b_i(res.z_bu(i), m_data.x_u_idx(i))));
     }
     return inf;
 }
@@ -1145,11 +1145,11 @@ T SolverBase<T, I, Preconditioner, MatrixType>::primal_prox_inf()
     inf = (std::max)(inf, m_preconditioner.unscale_dual_ineq(prox_vars.z_u - m_result.z_u).template lpNorm<Eigen::Infinity>());
     for (isize i = 0; i < m_data.n_x_l; i++)
     {
-        inf = (std::max)(inf, m_preconditioner.unscale_dual_b_i(prox_vars.z_bl(i) - m_result.z_bl(i), m_data.x_l_idx(i)));
+        inf = (std::max)(inf, std::abs(m_preconditioner.unscale_dual_b_i(prox_vars.z_bl(i) - m_result.z_bl(i), m_data.x_l_idx(i))));
     }
     for (isize i = 0; i < m_data.n_x_u; i++)
     {
-        inf = (std::max)(inf, m_preconditioner.unscale_dual_b_i(prox_vars.z_bu(i) - m_result.z_bu(i), m_data.x_u_idx(i)));
+        inf = (std::max)(inf, std::abs(m_preconditioner.unscale_dual_b_i(prox_vars.z_bu(i) - m_result.z_bu(i), m_data.x_u_idx(i))));
     }
     return inf;
 }
