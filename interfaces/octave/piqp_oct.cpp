@@ -15,7 +15,7 @@
 #define PIQP_MEX_SIGNATURE 0x271C1A7A
 
 #ifndef PIQP_VERSION
-#define PIQP_VERSION 0.6.2
+#define PIQP_VERSION 0.6.3
 #endif
 
 using Vec = Eigen::Matrix<double, Eigen::Dynamic, 1>;

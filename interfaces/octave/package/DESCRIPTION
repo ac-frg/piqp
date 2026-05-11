@@ -1,6 +1,6 @@
 name: piqp
-version: 0.6.2
-date: 2025-09-16
+version: 0.6.3
+date: 2026-05-11
 author: Roland Schwan <roland.schwan@epfl.ch>
 maintainer: Roland Schwan <roland.schwan@epfl.ch>
 title: PIQP - An Proximal Interior Point Quadratic Programming solver

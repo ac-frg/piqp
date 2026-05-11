@@ -66,5 +66,5 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./interfaces/octave/piqp-octave.tar.gz
-          asset_name: piqp-octave.tar.gz
+          asset_name: piqp-octave-${{ github.event.release.tag_name }}.tar.gz
           asset_content_type: application/gzip

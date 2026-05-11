@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-05-11
+
+### Changed
+- Improve C++ compile times by moving large implementation details into `.tpp` files [#38](https://github.com/PREDICT-EPFL/piqp/pull/38)
+
+### Fixed
+- Fix compatibility with Eigen 5 [#41](https://github.com/PREDICT-EPFL/piqp/pull/41)
+- Publish Octave release tarballs with versioned filenames [#36](https://github.com/PREDICT-EPFL/piqp/issues/36)
+
 ## [0.6.2] - 2025-09-16
 
 ### Changed
@@ -136,9 +145,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release of PIQP!
 
-[unreleased]: https://github.com/PREDICT-EPFL/piqp/compare/v0.6.2...HEAD
+[unreleased]: https://github.com/PREDICT-EPFL/piqp/compare/v0.6.3...HEAD
+[0.6.3]: https://github.com/PREDICT-EPFL/piqp/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/PREDICT-EPFL/piqp/compare/v0.6.1...v0.6.2
-[0.6.1]: https://github.com/PREDICT-EPFL/piqp/compare/v0.6.0...v0.6.2
+[0.6.1]: https://github.com/PREDICT-EPFL/piqp/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/PREDICT-EPFL/piqp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/PREDICT-EPFL/piqp/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/PREDICT-EPFL/piqp/compare/v0.4.1...v0.4.2
