@@ -1,7 +1,10 @@
 @PACKAGE_INIT@
 
 include(CMakeFindDependencyMacro)
-find_dependency(Eigen3 3.3 REQUIRED NO_MODULE)
+find_dependency(Eigen3 REQUIRED NO_MODULE)
+if (Eigen3_VERSION VERSION_LESS "3.3")
+    message(FATAL_ERROR "Eigen3 >= 3.3 required, found ${Eigen3_VERSION}")
+endif ()
 if (@BUILD_WITH_BLASFEO@)
     find_dependency(blasfeo REQUIRED)
 endif()
