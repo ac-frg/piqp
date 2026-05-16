@@ -52,6 +52,7 @@ current_dir = pwd;
 [piqp_matlab_dir,~,~] = fileparts(which('make_piqp.m'));
 piqp_dir = fullfile(piqp_matlab_dir, '../..');
 piqp_build_dir = fullfile(piqp_dir, 'build');
+piqp_matlab_build_dir = fullfile(piqp_build_dir, 'interfaces', 'matlab');
 
 %% Compile commands
 
@@ -122,6 +123,19 @@ if any(strcmpi(what,'mex')) || any(strcmpi(what,'all'))
     % Change directory back to matlab interface
     cd(piqp_matlab_dir);
 
+    mex_binaries = {
+        sprintf('piqp_instruction_set_mex.%s', mexext), ...
+        sprintf('piqp_mex.%s', mexext), ...
+        sprintf('piqp_avx2_mex.%s', mexext), ...
+        sprintf('piqp_avx512_mex.%s', mexext)};
+    for i = 1:length(mex_binaries)
+        mex_binary = mex_binaries{i};
+        mex_binary_path = fullfile(piqp_matlab_build_dir, mex_binary);
+        if exist(mex_binary_path, 'file')
+            copyfile(mex_binary_path, fullfile(piqp_matlab_dir, mex_binary));
+        end
+    end
+
     fprintf('\t\t\t\t\t\t[done]\n');
 
 end
@@ -170,9 +184,9 @@ if any(strcmpi(what,'package')) || any(strcmpi(what,'all'))
         'runtest_piqp.m'};
     for i = 1:length(files)
         file = files{i};
-        if exist(file, 'file')
-            copyfile(fullfile(piqp_matlab_dir, file), ...
-                fullfile(pkg_name, file));
+        file_path = fullfile(piqp_matlab_dir, file);
+        if exist(file_path, 'file')
+            copyfile(file_path, fullfile(pkg_name, file));
         end
     end
     
